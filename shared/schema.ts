@@ -1,0 +1,127 @@
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, json } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  role: text("role").notNull().default("tpo"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const news = pgTable("news", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const events = pgTable("events", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  company: text("company").notNull(),
+  eventDate: timestamp("event_date").notNull(),
+  status: text("status").notNull(), // ongoing, upcoming, past
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const students = pgTable("students", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  rollNumber: text("roll_number").notNull().unique(),
+  branch: text("branch"),
+  email: text("email"),
+  phone: text("phone"),
+  photoUrl: text("photo_url"),
+  selected: boolean("selected").default(false),
+  companyName: text("company_name"),
+  offerLetterUrl: text("offer_letter_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const alumni = pgTable("alumni", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  rollNumber: text("roll_number").notNull(),
+  passOutYear: integer("pass_out_year").notNull(),
+  higherEducationCollege: text("higher_education_college"),
+  collegeRollNumber: text("college_roll_number"),
+  address: text("address").notNull(),
+  contactNumber: text("contact_number").notNull(),
+  email: text("email").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const attendance = pgTable("attendance", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").references(() => events.id),
+  studentName: text("student_name").notNull(),
+  rollNumber: text("roll_number").notNull(),
+  markedAt: timestamp("marked_at").defaultNow(),
+});
+
+// Relations
+export const eventsRelations = relations(events, ({ many }) => ({
+  attendance: many(attendance),
+}));
+
+export const attendanceRelations = relations(attendance, ({ one }) => ({
+  event: one(events, {
+    fields: [attendance.eventId],
+    references: [events.id],
+  }),
+}));
+
+// Insert schemas
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertNewsSchema = createInsertSchema(news).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEventSchema = createInsertSchema(events).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertStudentSchema = createInsertSchema(students).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAlumniSchema = createInsertSchema(alumni).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAttendanceSchema = createInsertSchema(attendance).omit({
+  id: true,
+  markedAt: true,
+});
+
+// Types
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type News = typeof news.$inferSelect;
+export type InsertNews = z.infer<typeof insertNewsSchema>;
+export type Event = typeof events.$inferSelect;
+export type InsertEvent = z.infer<typeof insertEventSchema>;
+export type Student = typeof students.$inferSelect;
+export type InsertStudent = z.infer<typeof insertStudentSchema>;
+export type Alumni = typeof alumni.$inferSelect;
+export type InsertAlumni = z.infer<typeof insertAlumniSchema>;
+export type Attendance = typeof attendance.$inferSelect;
+export type InsertAttendance = z.infer<typeof insertAttendanceSchema>;
