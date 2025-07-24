@@ -1,0 +1,51 @@
+You are a full-stack developer. Help me build a "Training and Placement Portal" for my college using MERN Stack (MongoDB, Express.js, React.js, Node.js). The portal is accessible only by a Training and Placement Officer (TPO) through a login-protected admin panel.
+
+✅ Requirements:
+
+1. TPO Login Page:
+   - Simple login with username and password (JWT-based auth)
+   - No user registration needed, just hardcoded admin credentials
+
+2. Home Page (Public):
+   - Sections for Latest News, Events, and Upcoming Events
+   - Each event should have a type: past, ongoing, or upcoming
+   - Ongoing events must have a button/link to mark attendance
+
+3. Attendance System:
+   - Ongoing events generate a link where students can mark attendance (name, roll number)
+   - TPO should be able to export attendance to Excel
+
+4. Admin Dashboard (TPO Only):
+   - Add/Edit/Delete News, Events, and Upcoming Events
+   - For Events:
+     - Upload placement results
+     - For each student: name, roll number, photo, selected (yes/no), company name
+     - If selected = yes → show offer letter link
+     - If selected = no → show "Not selected"
+   - Export results in Excel
+
+5. Alumni Registration:
+   - Visible on the public homepage next to upcoming events
+   - Form fields:
+     - Name, Roll No, Pass Out Year, Higher Education College Name, College Roll No, Address with Pincode, Contact Number, Email
+   - Data to be stored in MongoDB
+   - Admin panel should have Excel export option for alumni data
+
+6. Student Info Upload:
+   - Admin uploads student details with:
+     - Name, Roll No, ID card image, Offer Letter (if available)
+   - Export to PDF or Excel from dashboard
+
+7. UI:
+   - Use React with Tailwind CSS
+   - Responsive design with a clean and intuitive dashboard
+   - Home Page should be public, dashboard secured
+
+8. Export Logic:
+   - Use xlsx or SheetJS for Excel export
+   - Use jsPDF or pdfmake for PDF export
+
+9. Hosting:
+   - Host frontend using Replit React App
+   - Host backend with Node.js + Express (use Express Router)
+   - MongoDB Atlas for cloud database
