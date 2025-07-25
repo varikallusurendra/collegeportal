@@ -54,22 +54,6 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* TPO Login Credentials Banner */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center space-x-6 text-sm">
-            <div className="flex items-center">
-              <User className="w-4 h-4 mr-2" />
-              <span className="font-medium">TPO Demo Login:</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span><strong>Username:</strong> tpo_admin</span>
-              <span><strong>Password:</strong> admin123</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
