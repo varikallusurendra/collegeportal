@@ -28,9 +28,26 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
+async function createDefaultUser() {
+  try {
+    const existingUser = await storage.getUserByUsername("tpo_admin");
+    if (!existingUser) {
+      const defaultUser = {
+        username: "tpo_admin",
+        password: await hashPassword("admin123"),
+        role: "tpo"
+      };
+      await storage.createUser(defaultUser);
+      console.log("Default TPO user created: username=tpo_admin, password=admin123");
+    }
+  } catch (error) {
+    console.error("Error creating default user:", error);
+  }
+}
+
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET || 'development-secret-key',
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
@@ -40,6 +57,9 @@ export function setupAuth(app: Express) {
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Create default TPO user if it doesn't exist
+  createDefaultUser();
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {

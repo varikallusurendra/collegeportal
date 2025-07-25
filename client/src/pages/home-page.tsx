@@ -54,6 +54,22 @@ export default function HomePage() {
         </div>
       </nav>
 
+      {/* TPO Login Credentials Banner */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center space-x-6 text-sm">
+            <div className="flex items-center">
+              <User className="w-4 h-4 mr-2" />
+              <span className="font-medium">TPO Demo Login:</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span><strong>Username:</strong> tpo_admin</span>
+              <span><strong>Password:</strong> admin123</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -77,32 +93,66 @@ export default function HomePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - News & Events */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Latest News Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Calendar className="w-5 h-5 text-primary mr-3" />
-                  Latest News
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {news.length === 0 ? (
-                    <p className="text-slate-600 text-center py-8">No news available at the moment.</p>
-                  ) : (
-                    news.slice(0, 3).map((item) => (
-                      <div key={item.id} className="border-l-4 border-primary pl-4 py-2">
-                        <h3 className="font-semibold text-slate-800">{item.title}</h3>
-                        <p className="text-slate-600 text-sm mt-1">{item.content.substring(0, 100)}...</p>
-                        <span className="text-xs text-slate-500">
-                          {new Date(item.createdAt!).toLocaleDateString()}
-                        </span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            {/* News and Notifications Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Latest News Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Calendar className="w-5 h-5 text-primary mr-3" />
+                    Latest News
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {news.length === 0 ? (
+                      <p className="text-slate-600 text-center py-8">No news available at the moment.</p>
+                    ) : (
+                      news.slice(0, 3).map((item) => (
+                        <div key={item.id} className="border-l-4 border-primary pl-4 py-2">
+                          <h3 className="font-semibold text-slate-800">{item.title}</h3>
+                          <p className="text-slate-600 text-sm mt-1">{item.content.substring(0, 80)}...</p>
+                          <span className="text-xs text-slate-500">
+                            {new Date(item.createdAt!).toLocaleDateString()}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Notifications Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Briefcase className="w-5 h-5 text-orange-600 mr-3" />
+                    Important Notifications
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="border-l-4 border-orange-500 pl-4 py-2 bg-orange-50 rounded-r-lg">
+                      <h3 className="font-semibold text-slate-800">Placement Registration Open</h3>
+                      <p className="text-slate-600 text-sm mt-1">Students can now register for upcoming placement drives. Last date: 31st Jan 2025</p>
+                      <span className="text-xs text-orange-600 font-medium">URGENT</span>
+                    </div>
+                    
+                    <div className="border-l-4 border-green-500 pl-4 py-2 bg-green-50 rounded-r-lg">
+                      <h3 className="font-semibold text-slate-800">Resume Building Workshop</h3>
+                      <p className="text-slate-600 text-sm mt-1">Join our expert-led resume building session on 28th Jan 2025</p>
+                      <span className="text-xs text-green-600 font-medium">NEW</span>
+                    </div>
+                    
+                    <div className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50 rounded-r-lg">
+                      <h3 className="font-semibold text-slate-800">Mock Interview Sessions</h3>
+                      <p className="text-slate-600 text-sm mt-1">Practice interviews with industry professionals. Book your slot now</p>
+                      <span className="text-xs text-blue-600 font-medium">INFO</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Events Section */}
             <Card>

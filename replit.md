@@ -8,6 +8,14 @@ This is a full-stack Training and Placement Portal for colleges built with a mod
 
 Preferred communication style: Simple, everyday language.
 
+## Demo Credentials
+
+For testing the TPO admin panel:
+- **Username:** tpo_admin
+- **Password:** admin123
+
+The system automatically creates this default user on first startup.
+
 ## System Architecture
 
 ### Frontend Architecture
