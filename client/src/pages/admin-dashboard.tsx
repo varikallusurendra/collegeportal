@@ -15,10 +15,12 @@ import { EventManagement } from "@/components/event-management";
 import { StudentManagement } from "@/components/student-management";
 import { ExportFunctions } from "@/components/export-functions";
 import { Event, Student, Alumni, Attendance } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminDashboard() {
   const { user, logoutMutation } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const { data: events = [] } = useQuery<Event[]>({
     queryKey: ["/api/events"],
@@ -45,10 +47,47 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleExport = async (endpoint: string, filename: string) => {
+    try {
+      const response = await fetch(endpoint, {
+        credentials: "include",
+        headers: {
+          'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Export failed");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Success",
+        description: "File exported successfully!",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to export file",
+        variant: "destructive",
+      });
+    }
+  };
+
   const stats = {
     totalStudents: students.length,
     placedStudents: students.filter(s => s.selected).length,
-    activeCompanies: [...new Set(events.map(e => e.company))].length,
+    activeCompanies: Array.from(new Set(events.map(e => e.company))).length,
     alumniRegistered: alumni.length,
   };
 
@@ -195,7 +234,10 @@ export default function AdminDashboard() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>Attendance Records</CardTitle>
-                  <Button variant="outline">
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleExport("/api/export/attendance", "attendance.xlsx")}
+                  >
                     <Download className="w-4 h-4 mr-2" />
                     Export Attendance
                   </Button>
@@ -256,7 +298,10 @@ export default function AdminDashboard() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>Alumni Database</CardTitle>
-                  <Button variant="outline">
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleExport("/api/export/alumni", "alumni.xlsx")}
+                  >
                     <Download className="w-4 h-4 mr-2" />
                     Export Alumni
                   </Button>

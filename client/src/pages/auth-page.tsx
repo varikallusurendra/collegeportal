@@ -27,7 +27,7 @@ export default function AuthPage() {
 
   // Redirect if already logged in
   if (user) {
-    setLocation("/admin");
+    setTimeout(() => setLocation("/admin"), 0);
     return null;
   }
 
