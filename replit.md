@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a full-stack Training and Placement Portal for colleges built with a modern tech stack. The application provides a comprehensive platform for managing placement activities, student information, events, and alumni data. It features a public homepage for students and visitors, along with a secure admin dashboard for Training and Placement Officers (TPOs).
+This is the official Training and Placement Portal for KITS Akshar Institute of Technology, built with a modern tech stack. The application provides a comprehensive platform for managing placement activities, student information, events, and alumni data. It features a public homepage for students and visitors, along with a secure admin dashboard for Training and Placement Officers (TPOs). The portal is fully branded with KITS college identity including logos, campus images, and institutional information.
 
 ## User Preferences
 

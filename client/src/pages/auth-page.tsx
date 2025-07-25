@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@shared/schema";
 import { z } from "zod";
+import collegeHeaderImg from "@assets/Screenshot 2025-07-25 113411_1753423944040.png";
 
 const loginSchema = insertUserSchema.pick({ username: true, password: true });
 type LoginForm = z.infer<typeof loginSchema>;
@@ -46,9 +47,9 @@ export default function AuthPage() {
       <div className="flex-1 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <GraduationCap className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-slate-800">Training & Placement Portal</h1>
-            <p className="text-slate-600 mt-2">TPO Access Panel</p>
+            <img src={collegeHeaderImg} alt="KITS Logo" className="h-16 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-slate-800">KITS Training & Placement Portal</h1>
+            <p className="text-slate-600 mt-2">Akshar Institute of Technology - TPO Access Panel</p>
           </div>
 
           <Card>

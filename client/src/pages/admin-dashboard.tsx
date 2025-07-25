@@ -16,6 +16,7 @@ import { StudentManagement } from "@/components/student-management";
 import { ExportFunctions } from "@/components/export-functions";
 import { Event, Student, Alumni, Attendance } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import collegeHeaderImg from "@assets/Screenshot 2025-07-25 113411_1753423944040.png";
 
 export default function AdminDashboard() {
   const { user, logoutMutation } = useAuth();
@@ -98,8 +99,11 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <BarChart3 className="text-primary text-xl mr-3" />
-              <h1 className="text-xl font-semibold text-slate-800">TPO Dashboard</h1>
+              <img src={collegeHeaderImg} alt="KITS Logo" className="h-8 mr-3" />
+              <div className="flex flex-col">
+                <h1 className="text-lg font-bold text-slate-800">KITS TPO Dashboard</h1>
+                <span className="text-xs text-slate-600">Akshar Institute of Technology</span>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-slate-600">Welcome, {user?.username}</span>

@@ -9,6 +9,8 @@ import { GraduationCap, Calendar, Users, Trophy, Briefcase, User, TrendingUp, Bu
 import { AlumniRegistrationModal } from "@/components/alumni-registration-modal";
 import { AttendanceModal } from "@/components/attendance-modal";
 import { Event, News } from "@shared/schema";
+import collegeHeaderImg from "@assets/Screenshot 2025-07-25 113411_1753423944040.png";
+import campusImg from "@assets/OUTR_1753423951311.jpg";
 
 export default function HomePage() {
   const [showAlumniModal, setShowAlumniModal] = useState(false);
@@ -39,8 +41,11 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <GraduationCap className="text-primary text-2xl mr-3" />
-              <span className="text-xl font-semibold text-slate-800">T&P Portal</span>
+              <img src={collegeHeaderImg} alt="KITS Logo" className="h-8 mr-3" />
+              <div className="flex flex-col">
+                <span className="text-lg font-bold text-slate-800">KITS Training & Placement</span>
+                <span className="text-xs text-slate-600">Akshar Institute of Technology</span>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <Link href="/auth">
@@ -58,15 +63,19 @@ export default function HomePage() {
       <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Training & Placement Portal</h1>
-            <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
-              Empowering students with industry connections and career opportunities
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">KITS Akshar Institute of Technology</h1>
+            <p className="text-xl text-blue-100 mb-4 max-w-3xl mx-auto">
+              Training & Placement Portal
             </p>
-            <div className="rounded-xl shadow-2xl mx-auto max-w-4xl w-full h-64 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
-              <div className="text-center">
-                <Building2 className="w-16 h-16 mx-auto mb-4 text-white/80" />
-                <p className="text-white/90">Modern Campus Facilities</p>
-              </div>
+            <p className="text-lg text-blue-200 mb-8 max-w-3xl mx-auto">
+              Empowering students with industry connections and career opportunities | Autonomous | AICTE Approved | Affiliated to JNTUK
+            </p>
+            <div className="rounded-xl shadow-2xl mx-auto max-w-4xl w-full h-80 overflow-hidden">
+              <img 
+                src={campusImg} 
+                alt="KITS Campus" 
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
         </div>
