@@ -322,42 +322,80 @@ export default function AdminDashboard() {
           </TabsContent>
           {/* Students Tab */}
           <TabsContent value="students">
-            {!selectedDept ? (
-              <>
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-2xl font-semibold text-slate-800">Students by Department</h3>
-                  <Button className="bg-primary text-white" onClick={() => setShowStudentManagement(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Student
-                  </Button>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-semibold text-slate-800">Student Management</h3>
+                  <p className="text-slate-600">Complete CRUD operations - Create, Read, Update, Delete students</p>
                 </div>
-                <DepartmentList departments={departments} onSelect={setSelectedDept} />
-              </>
-            ) : !selectedStudentYear ? (
-              <>
-                <div className="flex justify-between items-center mb-4">
-                  <button className="px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedDept(null)}>Back</button>
-                  <Button className="bg-primary text-white" onClick={() => setShowStudentManagement(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Student
-                  </Button>
-                </div>
-                <StudentYearList years={studentYears} onSelect={setSelectedStudentYear} />
-              </>
-            ) : !selectedStudent ? (
-              <>
-                <div className="flex justify-between items-center mb-4">
-                  <button className="px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedStudentYear(null)}>Back</button>
-                  <Button className="bg-primary text-white" onClick={() => setShowStudentManagement(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Student
-                  </Button>
-                </div>
-                <StudentList students={studentsNav} onSelect={setSelectedStudent} />
-              </>
-            ) : (
-              <StudentDetails student={selectedStudent} onBack={() => setSelectedStudent(null)} />
-            )}
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700 text-white" 
+                  onClick={() => setShowStudentManagement(true)}
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Manage Students (CRUD)
+                </Button>
+              </div>
+              
+              {!selectedDept ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Browse Students by Department</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <DepartmentList departments={departments} onSelect={setSelectedDept} />
+                  </CardContent>
+                </Card>
+              ) : !selectedStudentYear ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Years in {selectedDept}</CardTitle>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setSelectedDept(null)}
+                      className="ml-auto"
+                    >
+                      Back to Departments
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <StudentYearList years={studentYears} onSelect={setSelectedStudentYear} />
+                  </CardContent>
+                </Card>
+              ) : !selectedStudent ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{selectedDept} Year {selectedStudentYear} Students</CardTitle>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setSelectedStudentYear(null)}
+                      className="ml-auto"
+                    >
+                      Back to Years
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <StudentList students={studentsNav} onSelect={setSelectedStudent} />
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Student Details</CardTitle>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setSelectedStudent(null)}
+                      className="ml-auto"
+                    >
+                      Back to List
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <StudentDetails student={selectedStudent} onBack={() => setSelectedStudent(null)} />
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </TabsContent>
           {/* Attendance Tab */}
           <TabsContent value="attendance">
