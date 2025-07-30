@@ -20,6 +20,7 @@ import { Event, Student, Alumni, Attendance } from '@shared/schema';
 import { useQuery } from '@tanstack/react-query';
 import { ExportFunctions } from '@/components/export-functions';
 import { ImportFunctions } from '@/components/import-functions';
+import { NotificationManagement } from '@/components/notification-management';
 import collegeHeaderImg from '@assets/Screenshot 2025-07-25 113411_1753423944040.png';
 import { useToast } from '@/hooks/use-toast';
 
@@ -153,15 +154,15 @@ export default function AdminDashboard() {
       {/* Dashboard Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-9 mb-8">
+          <TabsList className="grid w-full grid-cols-8 mb-8">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="events">Events</TabsTrigger>
             <TabsTrigger value="students">Students</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="alumni">Alumni</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="exports">Exports</TabsTrigger>
             <TabsTrigger value="imports">Imports</TabsTrigger>
-            {/* Add more tabs as needed */}
           </TabsList>
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
@@ -392,6 +393,10 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+          {/* Notifications Tab */}
+          <TabsContent value="notifications">
+            <NotificationManagement />
           </TabsContent>
           {/* Exports Tab */}
           <TabsContent value="exports">

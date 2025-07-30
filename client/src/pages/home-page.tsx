@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GraduationCap, Calendar, Users, Trophy, Briefcase, User, TrendingUp, Building2, AlertCircle, Info, Star } from "lucide-react";
+import { GraduationCap, Calendar, Users, Trophy, Briefcase, User, TrendingUp, Building2, AlertCircle, Info, Star, ExternalLink, FileText } from "lucide-react";
 import { AlumniRegistrationModal } from "@/components/alumni-registration-modal";
 import { AttendanceModal } from "@/components/attendance-modal";
 import { Event, News, ImportantNotification } from "@shared/schema";
@@ -192,16 +192,34 @@ export default function HomePage() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {importantNotifications.map((notification) => (
-                          <div key={notification.id} className="flex items-center p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                            <AlertCircle className="w-5 h-5 text-orange-500 mr-3" />
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-slate-800 text-sm">{notification.title}</h3>
-                              <p className="text-slate-600 text-xs mt-1">{notification.type}</p>
+                        {importantNotifications.map((notification) => {
+                          const NotificationContent = (
+                            <div className="flex items-center p-3 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors">
+                              <AlertCircle className="w-5 h-5 text-orange-500 mr-3" />
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-slate-800 text-sm">{notification.title}</h3>
+                                <p className="text-slate-600 text-xs mt-1">{notification.type}</p>
+                              </div>
+                              <Badge className="text-xs bg-orange-500 text-white">{notification.type}</Badge>
                             </div>
-                            <Badge className="text-xs bg-orange-500 text-white">{notification.type}</Badge>
-                          </div>
-                        ))}
+                          );
+                          
+                          return notification.link ? (
+                            <a 
+                              key={notification.id} 
+                              href={notification.link} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="block cursor-pointer"
+                            >
+                              {NotificationContent}
+                            </a>
+                          ) : (
+                            <div key={notification.id}>
+                              {NotificationContent}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -232,10 +250,36 @@ export default function HomePage() {
                       ongoingEvents.map((event) => (
                         <div key={event.id} className="bg-green-50 border border-green-200 rounded-lg p-4">
                           <div className="flex justify-between items-start">
-                            <div>
+                            <div className="flex-1">
                               <h3 className="font-semibold text-slate-800">{event.title}</h3>
                               <p className="text-slate-600 text-sm mt-1">{event.description}</p>
                               <p className="text-slate-600 text-sm">Company: {event.company}</p>
+                              {(event.notificationLink || event.attachmentUrl) && (
+                                <div className="flex gap-2 mt-2">
+                                  {event.notificationLink && (
+                                    <a 
+                                      href={event.notificationLink} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200"
+                                    >
+                                      <ExternalLink className="w-3 h-3 mr-1" />
+                                      Link
+                                    </a>
+                                  )}
+                                  {event.attachmentUrl && (
+                                    <a 
+                                      href={event.attachmentUrl} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200"
+                                    >
+                                      <FileText className="w-3 h-3 mr-1" />
+                                      Attachment
+                                    </a>
+                                  )}
+                                </div>
+                              )}
                               <Badge className="mt-2 bg-green-500 text-white">LIVE</Badge>
                             </div>
                             <Button 
@@ -259,6 +303,32 @@ export default function HomePage() {
                           <h3 className="font-semibold text-slate-800">{event.title}</h3>
                           <p className="text-slate-600 text-sm mt-1">{event.description}</p>
                           <p className="text-slate-600 text-sm">Company: {event.company}</p>
+                          {(event.notificationLink || event.attachmentUrl) && (
+                            <div className="flex gap-2 mt-2">
+                              {event.notificationLink && (
+                                <a 
+                                  href={event.notificationLink} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200"
+                                >
+                                  <ExternalLink className="w-3 h-3 mr-1" />
+                                  Link
+                                </a>
+                              )}
+                              {event.attachmentUrl && (
+                                <a 
+                                  href={event.attachmentUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200"
+                                >
+                                  <FileText className="w-3 h-3 mr-1" />
+                                  Attachment
+                                </a>
+                              )}
+                            </div>
+                          )}
                           <div className="flex justify-between items-center mt-3">
                             <span className="text-sm text-slate-500">
                               {new Date(event.startDate).toLocaleDateString()} • {new Date(event.startDate).toLocaleTimeString()}
