@@ -76,12 +76,12 @@ export default function AdminDashboard() {
     // Use direct API calls instead of slow fetchDepartments function
     const loadData = async () => {
       try {
-        // Extract departments from existing students data
-        const depts = Array.from(new Set(students.map(s => s.branch).filter(Boolean))).sort();
+        // Extract departments from existing students data (filter out null/undefined)
+        const depts = Array.from(new Set(students.map(s => s.branch).filter((branch): branch is string => Boolean(branch)))).sort();
         setDepartments(depts);
         
-        // Extract companies from existing events data
-        const comps = Array.from(new Set(events.map(e => e.company).filter(Boolean))).sort();
+        // Extract companies from existing events data (filter out null/undefined)
+        const comps = Array.from(new Set(events.map(e => e.company).filter((company): company is string => Boolean(company)))).sort();
         setCompanies(comps);
         
         // Extract unique alumni pass out years
@@ -100,10 +100,10 @@ export default function AdminDashboard() {
   // Load years when department/company is selected - optimized
   useEffect(() => {
     if (selectedDept) {
-      // Use existing students data instead of API call
+      // Use existing students data instead of API call (filter out null/undefined)
       const years = Array.from(new Set(
-        students.filter(s => s.branch === selectedDept).map(s => s.year).filter(Boolean)
-      )).sort((a, b) => (b || 0) - (a || 0));
+        students.filter(s => s.branch === selectedDept).map(s => s.year).filter((year): year is number => Boolean(year))
+      )).sort((a, b) => b - a);
       setStudentYears(years);
       setSelectedStudentYear(null);
       setStudentsNav([]);

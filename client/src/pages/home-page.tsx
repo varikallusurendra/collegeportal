@@ -41,9 +41,23 @@ export default function HomePage() {
     queryKey: ["/api/important-notifications"],
   });
 
-  const ongoingEvents = (events as (Event & { status?: string })[]).filter(event => event.status === 'ongoing');
-  const upcomingEvents = (events as (Event & { status?: string })[]).filter(event => event.status === 'upcoming');
-  const pastEvents = (events as (Event & { status?: string })[]).filter(event => event.status === 'past');
+  // Determine event status based on dates
+  const now = new Date();
+  const ongoingEvents = events.filter(event => {
+    const startDate = new Date(event.startDate);
+    const endDate = new Date(event.endDate);
+    return startDate <= now && now <= endDate;
+  });
+  
+  const upcomingEvents = events.filter(event => {
+    const startDate = new Date(event.startDate);
+    return startDate > now;
+  });
+  
+  const pastEvents = events.filter(event => {
+    const endDate = new Date(event.endDate);
+    return endDate < now;
+  });
 
   const defaultPlacementStats: PlacementStats = {
     studentsPlaced: 0,
