@@ -71,57 +71,94 @@ export default function AdminDashboard() {
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [selectedEventForAttendance, setSelectedEventForAttendance] = useState<Event | null>(null);
 
-  // Load departments, companies, and alumni years on mount
+  // Load departments, companies, and alumni years on mount with optimized queries
   useEffect(() => {
-    fetchDepartments().then((d) => setDepartments(d as string[]));
-    fetchCompanies().then((c) => setCompanies(c as string[]));
-    // Extract unique alumni pass out years
-    const years = Array.from(new Set(alumni.map(a => a.passOutYear))).sort((a, b) => b - a);
-    setAlumniYears(years);
-  }, [alumni]);
+    // Use direct API calls instead of slow fetchDepartments function
+    const loadData = async () => {
+      try {
+        // Extract departments from existing students data
+        const depts = Array.from(new Set(students.map(s => s.branch).filter(Boolean))).sort();
+        setDepartments(depts);
+        
+        // Extract companies from existing events data
+        const comps = Array.from(new Set(events.map(e => e.company).filter(Boolean))).sort();
+        setCompanies(comps);
+        
+        // Extract unique alumni pass out years
+        const years = Array.from(new Set(alumni.map(a => a.passOutYear))).sort((a, b) => b - a);
+        setAlumniYears(years);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    };
+    
+    if (students.length > 0 || events.length > 0 || alumni.length > 0) {
+      loadData();
+    }
+  }, [students, events, alumni]);
 
-  // Load years when department/company is selected
+  // Load years when department/company is selected - optimized
   useEffect(() => {
     if (selectedDept) {
-      fetchStudentYears(selectedDept).then((y) => setStudentYears(y as number[]));
+      // Use existing students data instead of API call
+      const years = Array.from(new Set(
+        students.filter(s => s.branch === selectedDept).map(s => s.year).filter(Boolean)
+      )).sort((a, b) => (b || 0) - (a || 0));
+      setStudentYears(years);
       setSelectedStudentYear(null);
       setStudentsNav([]);
       setSelectedStudent(null);
     }
-  }, [selectedDept]);
+  }, [selectedDept, students]);
 
   useEffect(() => {
     if (selectedCompany) {
-      fetchEventYears(selectedCompany).then((y) => setEventYears(y as number[]));
+      // Use existing events data instead of API call - extract year from startDate
+      const years = Array.from(new Set(
+        events.filter(e => e.company === selectedCompany).map(e => new Date(e.startDate).getFullYear()).filter(Boolean)
+      )).sort((a, b) => (b || 0) - (a || 0));
+      setEventYears(years);
       setSelectedEventYear(null);
       setEventsNav([]);
       setSelectedEvent(null);
     }
-  }, [selectedCompany]);
+  }, [selectedCompany, events]);
 
-  // Load students/events when year is selected
+  // Load students/events when year is selected - optimized
   useEffect(() => {
     if (selectedDept && selectedStudentYear !== null) {
-      fetchStudentsByDepartmentYear(selectedDept, selectedStudentYear).then(setStudentsNav);
+      // Use existing students data instead of API call
+      const filteredStudents = students.filter(
+        s => s.branch === selectedDept && s.year === selectedStudentYear
+      );
+      setStudentsNav(filteredStudents);
+    }
+  }, [selectedDept, selectedStudentYear, students]);
+
+  useEffect(() => {
+    if (selectedCompany && selectedEventYear !== null) {
+      // Use existing events data instead of API call
+      const filteredEvents = events.filter(
+        e => e.company === selectedCompany && new Date(e.startDate).getFullYear() === selectedEventYear
+      );
+      setEventsNav(filteredEvents);
+    }
+  }, [selectedCompany, selectedEventYear, events]);
+
+  useEffect(() => {
+    if (selectedAlumniYear !== null) {
+      // Use existing alumni data instead of API call
+      const filteredAlumni = alumni.filter(
+        a => a.passOutYear === selectedAlumniYear
+      );
+      setAlumniNav(filteredAlumni);
       setSelectedStudent(null);
     }
   }, [selectedDept, selectedStudentYear]);
 
-  useEffect(() => {
-    if (selectedCompany && selectedEventYear !== null) {
-      fetchEventsByCompanyYear(selectedCompany, selectedEventYear).then(setEventsNav);
-      setSelectedEvent(null);
-    }
-  }, [selectedCompany, selectedEventYear]);
+  // Remove duplicate useEffect - already handled above
 
-  // Load alumni when year is selected
-  useEffect(() => {
-    if (selectedAlumniYear) {
-      const filtered = alumni.filter(a => a.passOutYear === selectedAlumniYear);
-      setAlumniNav(filtered);
-      setSelectedAlumni(null);
-    }
-  }, [selectedAlumniYear, alumni]);
+  // Remove duplicate useEffect - already handled above
 
   const handleLogout = async () => {
     try {
@@ -314,7 +351,27 @@ export default function AdminDashboard() {
                     Add Event
                   </Button>
                 </div>
-                <EventList events={eventsNav} onSelect={setSelectedEvent} />
+                <EventList 
+                  events={eventsNav} 
+                  onSelect={setSelectedEvent}
+                  onEdit={(event) => {
+                    setShowEventManagement(true);
+                  }}
+                  onDelete={async (eventId) => {
+                    try {
+                      const response = await fetch(`/api/events/${eventId}`, {
+                        method: 'DELETE',
+                        credentials: 'include'
+                      });
+                      if (response.ok) {
+                        toast({ title: 'Success', description: 'Event deleted successfully!' });
+                        window.location.reload();
+                      }
+                    } catch (error) {
+                      toast({ title: 'Error', description: 'Failed to delete event', variant: 'destructive' });
+                    }
+                  }}
+                />
               </>
             ) : (
               <EventDetails event={selectedEvent} onBack={() => setSelectedEvent(null)} />
@@ -375,7 +432,29 @@ export default function AdminDashboard() {
                     </Button>
                   </CardHeader>
                   <CardContent>
-                    <StudentList students={studentsNav} onSelect={setSelectedStudent} />
+                    <StudentList 
+                      students={studentsNav} 
+                      onSelect={setSelectedStudent}
+                      onEdit={(student) => {
+                        // Set editing student and open management modal
+                        setShowStudentManagement(true);
+                      }}
+                      onDelete={async (studentId) => {
+                        try {
+                          const response = await fetch(`/api/students/${studentId}`, {
+                            method: 'DELETE',
+                            credentials: 'include'
+                          });
+                          if (response.ok) {
+                            toast({ title: 'Success', description: 'Student deleted successfully!' });
+                            // Refresh data
+                            window.location.reload();
+                          }
+                        } catch (error) {
+                          toast({ title: 'Error', description: 'Failed to delete student', variant: 'destructive' });
+                        }
+                      }}
+                    />
                   </CardContent>
                 </Card>
               ) : (
@@ -554,7 +633,27 @@ export default function AdminDashboard() {
                     Add Alumni
                   </Button>
                 </div>
-                <AlumniList alumni={alumniNav} onSelect={setSelectedAlumni} />
+                <AlumniList 
+                  alumni={alumniNav} 
+                  onSelect={setSelectedAlumni}
+                  onEdit={(alumni) => {
+                    setShowAlumniManagement(true);
+                  }}
+                  onDelete={async (alumniId) => {
+                    try {
+                      const response = await fetch(`/api/alumni/${alumniId}`, {
+                        method: 'DELETE',
+                        credentials: 'include'
+                      });
+                      if (response.ok) {
+                        toast({ title: 'Success', description: 'Alumni deleted successfully!' });
+                        window.location.reload();
+                      }
+                    } catch (error) {
+                      toast({ title: 'Error', description: 'Failed to delete alumni', variant: 'destructive' });
+                    }
+                  }}
+                />
               </>
             ) : (
               <AlumniDetails alumni={selectedAlumni} onBack={() => setSelectedAlumni(null)} />
