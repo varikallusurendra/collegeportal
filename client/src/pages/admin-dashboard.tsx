@@ -300,27 +300,48 @@ export default function AdminDashboard() {
                   {attendance.length === 0 ? (
                     <p className="text-slate-600 text-center py-8">No attendance records found.</p>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-slate-200">
-                        <thead className="bg-slate-50">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Roll Number</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Event</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-slate-200">
-                          {attendance.map((record) => (
-                            <tr key={record.id}>
-                              <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-800">{record.studentName}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">{record.rollNumber}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">Event #{record.eventId}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">{new Date(record.markedAt!).toLocaleDateString()}</td>
-                            </tr>
+                    <div className="space-y-6">
+                      {Object.entries(
+                        attendance.reduce((acc, record) => {
+                          const dept = record.branch || 'Unknown Department';
+                          if (!acc[dept]) acc[dept] = {};
+                          const year = record.year || 0;
+                          if (!acc[dept][year]) acc[dept][year] = [];
+                          acc[dept][year].push(record);
+                          return acc;
+                        }, {} as Record<string, Record<number, typeof attendance>>)
+                      ).map(([dept, yearGroups]) => (
+                        <div key={dept} className="border rounded-lg p-4">
+                          <h3 className="text-lg font-semibold text-slate-800 mb-4">{dept}</h3>
+                          {Object.entries(yearGroups).map(([year, records]) => (
+                            <div key={year} className="mb-4">
+                              <h4 className="text-md font-medium text-slate-700 mb-2">Year {year}</h4>
+                              <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-slate-200">
+                                  <thead className="bg-slate-50">
+                                    <tr>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Student Name</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Roll Number</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Event</th>
+                                      <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Date</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="bg-white divide-y divide-slate-200">
+                                    {records.map((record) => (
+                                      <tr key={record.id}>
+                                        <td className="px-4 py-2 whitespace-nowrap font-medium text-slate-800">{record.studentName}</td>
+                                        <td className="px-4 py-2 whitespace-nowrap text-slate-600">{record.rollNumber}</td>
+                                        <td className="px-4 py-2 whitespace-nowrap text-slate-600">Event #{record.eventId}</td>
+                                        <td className="px-4 py-2 whitespace-nowrap text-slate-600">{new Date(record.markedAt!).toLocaleDateString()}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
                           ))}
-                        </tbody>
-                      </table>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

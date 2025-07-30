@@ -26,6 +26,8 @@ export const events = pgTable("events", {
   company: text("company").notNull(),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
+  attachmentUrl: text("attachment_url"), // For PDFs and other files
+  notificationLink: text("notification_link"), // For web links
   // status: text("status").notNull(), // Status is now computed, not stored
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -67,6 +69,8 @@ export const attendance = pgTable("attendance", {
   eventId: integer("event_id").references(() => events.id),
   studentName: text("student_name").notNull(),
   rollNumber: text("roll_number").notNull(),
+  branch: text("branch"),
+  year: integer("year"),
   markedAt: timestamp("marked_at").defaultNow(),
 });
 

@@ -19,6 +19,8 @@ import { Plus, Edit, Trash2, Calendar } from "lucide-react";
 const eventFormSchema = insertEventSchema.extend({
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
+  attachmentUrl: z.string().optional(),
+  notificationLink: z.string().optional(),
 });
 
 type EventForm = z.infer<typeof eventFormSchema>;
@@ -42,6 +44,8 @@ export function EventManagement() {
       company: "",
       startDate: "",
       endDate: "",
+      attachmentUrl: "",
+      notificationLink: "",
     },
   });
 
@@ -128,6 +132,8 @@ export function EventManagement() {
       company: "",
       startDate: "",
       endDate: "",
+      attachmentUrl: "",
+      notificationLink: "",
     });
     setShowEventModal(true);
   };
@@ -140,6 +146,8 @@ export function EventManagement() {
       company: event.company,
       startDate: new Date(event.startDate).toISOString().slice(0, 16),
       endDate: new Date(event.endDate).toISOString().slice(0, 16),
+      attachmentUrl: event.attachmentUrl || "",
+      notificationLink: event.notificationLink || "",
     });
     setShowEventModal(true);
   };
@@ -324,6 +332,28 @@ export function EventManagement() {
                   {form.formState.errors.endDate.message}
                 </p>
               )}
+            </div>
+
+            <div>
+              <Label htmlFor="notificationLink">Notification Link (Optional)</Label>
+              <Input
+                id="notificationLink"
+                type="url"
+                placeholder="https://example.com/notification"
+                {...form.register("notificationLink")}
+              />
+              <p className="text-xs text-slate-500 mt-1">Add a web link for this event notification</p>
+            </div>
+
+            <div>
+              <Label htmlFor="attachmentUrl">Attachment File URL (Optional)</Label>
+              <Input
+                id="attachmentUrl"
+                type="url"
+                placeholder="https://example.com/document.pdf"
+                {...form.register("attachmentUrl")}
+              />
+              <p className="text-xs text-slate-500 mt-1">Add a PDF or document link for this event</p>
             </div>
 
             <div className="flex space-x-2">
