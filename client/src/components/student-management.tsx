@@ -3,20 +3,25 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertStudentSchema, Student } from "@shared/schema";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Edit, User, FileText, Building2 } from "lucide-react";
+import { Plus, Edit, Trash2, Users, UserCheck, Building } from "lucide-react";
 
-type StudentForm = z.infer<typeof insertStudentSchema>;
+const studentFormSchema = insertStudentSchema.extend({
+  year: z.number().min(1, "Year is required").max(4, "Year must be between 1-4"),
+  package: z.number().optional(),
+});
+
+type StudentForm = z.infer<typeof studentFormSchema>;
 
 export function StudentManagement() {
   const [showStudentModal, setShowStudentModal] = useState(false);
@@ -29,34 +34,24 @@ export function StudentManagement() {
   });
 
   const form = useForm<StudentForm>({
-    resolver: zodResolver(insertStudentSchema),
+    resolver: zodResolver(studentFormSchema),
     defaultValues: {
       name: "",
       rollNumber: "",
       branch: "",
+      year: 1,
       email: "",
       phone: "",
       selected: false,
       companyName: "",
-      photoUrl: "",
-      offerLetterUrl: "",
       package: undefined,
       role: "",
     },
   });
 
   const createStudentMutation = useMutation({
-    mutationFn: async (data: FormData) => {
-      const response = await fetch("/api/students", {
-        method: "POST",
-        body: data,
-        credentials: "include",
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to create student");
-      }
-      
+    mutationFn: async (data: StudentForm) => {
+      const response = await apiRequest("POST", "/api/students", data);
       return response.json();
     },
     onSuccess: () => {
@@ -77,19 +72,9 @@ export function StudentManagement() {
   });
 
   const updateStudentMutation = useMutation({
-    mutationFn: async (data: FormData) => {
+    mutationFn: async (data: StudentForm) => {
       if (!editingStudent) return;
-      
-      const response = await fetch(`/api/students/${editingStudent.id}`, {
-        method: "PUT",
-        body: data,
-        credentials: "include",
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to update student");
-      }
-      
+      const response = await apiRequest("PUT", `/api/students/${editingStudent.id}`, data);
       return response.json();
     },
     onSuccess: () => {
@@ -109,18 +94,37 @@ export function StudentManagement() {
     },
   });
 
+  const deleteStudentMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/students/${id}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Student deleted successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAddStudent = () => {
     setEditingStudent(null);
     form.reset({
       name: "",
       rollNumber: "",
       branch: "",
+      year: 1,
       email: "",
       phone: "",
       selected: false,
       companyName: "",
-      photoUrl: "",
-      offerLetterUrl: "",
       package: undefined,
       role: "",
     });
@@ -133,16 +137,21 @@ export function StudentManagement() {
       name: student.name,
       rollNumber: student.rollNumber,
       branch: student.branch || "",
+      year: student.year || 1,
       email: student.email || "",
       phone: student.phone || "",
       selected: student.selected || false,
       companyName: student.companyName || "",
-      photoUrl: student.photoUrl || "",
-      offerLetterUrl: student.offerLetterUrl || "",
       package: student.package || undefined,
       role: student.role || "",
     });
     setShowStudentModal(true);
+  };
+
+  const handleDeleteStudent = (id: number) => {
+    if (confirm("Are you sure you want to delete this student?")) {
+      deleteStudentMutation.mutate(id);
+    }
   };
 
   const handleCloseModal = () => {
@@ -152,33 +161,22 @@ export function StudentManagement() {
   };
 
   const onSubmit = (data: StudentForm) => {
-    const formData = new FormData();
-    
-    // Add form fields to FormData
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        formData.append(key, value.toString());
-      }
-    });
-
-    // Add files if present
-    const photoInput = document.getElementById('photo') as HTMLInputElement;
-    const offerLetterInput = document.getElementById('offerLetter') as HTMLInputElement;
-    
-    if (photoInput?.files?.[0]) {
-      formData.append('photo', photoInput.files[0]);
-    }
-    
-    if (offerLetterInput?.files?.[0]) {
-      formData.append('offerLetter', offerLetterInput.files[0]);
-    }
-
     if (editingStudent) {
-      updateStudentMutation.mutate(formData);
+      updateStudentMutation.mutate(data);
     } else {
-      createStudentMutation.mutate(formData);
+      createStudentMutation.mutate(data);
     }
   };
+
+  // Group students by branch and year
+  const groupedStudents = students.reduce((acc, student) => {
+    const branch = student.branch || 'Unknown';
+    const year = student.year || 0;
+    if (!acc[branch]) acc[branch] = {};
+    if (!acc[branch][year]) acc[branch][year] = [];
+    acc[branch][year].push(student);
+    return acc;
+  }, {} as Record<string, Record<number, Student[]>>);
 
   if (isLoading) {
     return <div>Loading students...</div>;
@@ -187,89 +185,94 @@ export function StudentManagement() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-semibold text-slate-800">Student Management</h3>
-        <Button onClick={handleAddStudent}>
+        <div>
+          <h3 className="text-2xl font-semibold text-slate-800">Student Management</h3>
+          <p className="text-slate-600">Total Students: {students.length}</p>
+        </div>
+        <Button onClick={handleAddStudent} className="bg-primary text-white">
           <Plus className="w-4 h-4 mr-2" />
           Add Student
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {students.length === 0 ? (
-          <Card className="col-span-full">
-            <CardContent className="p-8 text-center">
-              <User className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-              <p className="text-slate-600">No students added yet.</p>
-              <Button className="mt-4" onClick={handleAddStudent}>
-                Add your first student
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          students.map((student) => (
-            <Card key={student.id}>
+      {Object.keys(groupedStudents).length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Users className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+            <p className="text-slate-600">No students registered yet.</p>
+            <Button className="mt-4" onClick={handleAddStudent}>
+              Add your first student
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          {Object.entries(groupedStudents).map(([branch, yearGroups]) => (
+            <Card key={branch}>
               <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <Avatar>
-                    <AvatarImage src={student.photoUrl || undefined} />
-                    <AvatarFallback>
-                      {student.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{student.name}</CardTitle>
-                    <p className="text-sm text-slate-600">{student.rollNumber}</p>
-                    <p className="text-xs text-slate-500">{student.branch}</p>
-                  </div>
-                </div>
+                <CardTitle className="flex items-center">
+                  <Building className="w-5 h-5 mr-2" />
+                  {branch}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 mb-4">
-                  {student.email && (
-                    <p className="text-sm text-slate-600">{student.email}</p>
-                  )}
-                  {student.phone && (
-                    <p className="text-sm text-slate-600">{student.phone}</p>
-                  )}
-                </div>
-                
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm text-slate-600">Status:</span>
-                  <Badge className={student.selected ? "bg-green-500" : "bg-slate-400"}>
-                    {student.selected ? "Selected" : "Not Selected"}
-                  </Badge>
-                </div>
-                
-                {student.selected && student.companyName && (
-                  <div className="flex items-center space-x-2 mb-4">
-                    <Building2 className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm text-slate-600">{student.companyName}</span>
+                {Object.entries(yearGroups).map(([year, students]) => (
+                  <div key={year} className="mb-6">
+                    <h4 className="text-lg font-medium text-slate-700 mb-3">Year {year}</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {students.map((student) => (
+                        <Card key={student.id} className="border">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex-1">
+                                <h5 className="font-medium text-slate-800">{student.name}</h5>
+                                <p className="text-sm text-slate-600">{student.rollNumber}</p>
+                                {student.email && (
+                                  <p className="text-xs text-slate-500">{student.email}</p>
+                                )}
+                              </div>
+                              {student.selected && (
+                                <Badge className="bg-green-500 text-white">
+                                  <UserCheck className="w-3 h-3 mr-1" />
+                                  Placed
+                                </Badge>
+                              )}
+                            </div>
+                            {student.selected && student.companyName && (
+                              <div className="mb-2 p-2 bg-green-50 rounded text-xs">
+                                <p className="font-medium text-green-800">{student.companyName}</p>
+                                {student.role && <p className="text-green-600">{student.role}</p>}
+                                {student.package && <p className="text-green-600">₹{student.package} LPA</p>}
+                              </div>
+                            )}
+                            <div className="flex space-x-2 mt-3">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditStudent(student)}
+                              >
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600 border-red-300 hover:bg-red-50"
+                                onClick={() => handleDeleteStudent(student.id)}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
                   </div>
-                )}
-                
-                <div className="flex space-x-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleEditStudent(student)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  {student.offerLetterUrl && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => window.open(student.offerLetterUrl!, '_blank')}
-                    >
-                      <FileText className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
+                ))}
               </CardContent>
             </Card>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       <Dialog open={showStudentModal} onOpenChange={handleCloseModal}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
@@ -280,12 +283,12 @@ export function StudentManagement() {
           </DialogHeader>
 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">Name</Label>
                 <Input
                   id="name"
-                  placeholder="Enter student name"
+                  placeholder="Student name"
                   {...form.register("name")}
                 />
                 {form.formState.errors.name && (
@@ -294,12 +297,11 @@ export function StudentManagement() {
                   </p>
                 )}
               </div>
-
               <div>
                 <Label htmlFor="rollNumber">Roll Number</Label>
                 <Input
                   id="rollNumber"
-                  placeholder="Enter roll number"
+                  placeholder="Roll number"
                   {...form.register("rollNumber")}
                 />
                 {form.formState.errors.rollNumber && (
@@ -310,16 +312,51 @@ export function StudentManagement() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="branch">Branch</Label>
-                <Input
-                  id="branch"
-                  placeholder="e.g., Computer Science"
-                  {...form.register("branch")}
+                <Label htmlFor="branch">Branch/Department</Label>
+                <Controller
+                  name="branch"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select branch" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Computer Science">Computer Science</SelectItem>
+                        <SelectItem value="Electronics">Electronics</SelectItem>
+                        <SelectItem value="Mechanical">Mechanical</SelectItem>
+                        <SelectItem value="Civil">Civil</SelectItem>
+                        <SelectItem value="Electrical">Electrical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 />
               </div>
+              <div>
+                <Label htmlFor="year">Year</Label>
+                <Controller
+                  name="year"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1st Year</SelectItem>
+                        <SelectItem value="2">2nd Year</SelectItem>
+                        <SelectItem value="3">3rd Year</SelectItem>
+                        <SelectItem value="4">4th Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            </div>
 
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -329,83 +366,62 @@ export function StudentManagement() {
                   {...form.register("email")}
                 />
               </div>
+              <div>
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  placeholder="Phone number"
+                  {...form.register("phone")}
+                />
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                placeholder="+91 9876543210"
-                {...form.register("phone")}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="photo">Student Photo</Label>
-              <Input
-                id="photo"
-                type="file"
-                accept="image/*"
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="selected"
-                {...form.register("selected")}
-              />
-              <Label htmlFor="selected">Selected for placement</Label>
-            </div>
-
-            {form.watch("selected") && (
-              <>
-                <div>
-                  <Label htmlFor="companyName">Company Name</Label>
-                  <Input
-                    id="companyName"
-                    placeholder="Enter company name"
-                    {...form.register("companyName")}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="offerLetter">Offer Letter</Label>
-                  <Input
-                    id="offerLetter"
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="package">Package (LPA)</Label>
-                  <Input
-                    id="package"
-                    type="number"
-                    step="0.1"
-                    placeholder="Enter package in LPA"
-                    {...form.register("package", { valueAsNumber: true })}
-                  />
-                  {form.formState.errors.package && (
-                    <p className="text-sm text-red-500 mt-1">
-                      {form.formState.errors.package.message}
-                    </p>
+            <div className="space-y-4 border-t pt-4">
+              <div className="flex items-center space-x-2">
+                <Controller
+                  name="selected"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Checkbox
+                      id="selected"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
                   )}
+                />
+                <Label htmlFor="selected">Student is placed</Label>
+              </div>
+
+              {form.watch("selected") && (
+                <div className="space-y-3 pl-6 border-l-2 border-green-200">
+                  <div>
+                    <Label htmlFor="companyName">Company Name</Label>
+                    <Input
+                      id="companyName"
+                      placeholder="Company name"
+                      {...form.register("companyName")}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="role">Job Role</Label>
+                    <Input
+                      id="role"
+                      placeholder="Job role"
+                      {...form.register("role")}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="package">Package (LPA)</Label>
+                    <Input
+                      id="package"
+                      type="number"
+                      placeholder="Package in LPA"
+                      {...form.register("package", { valueAsNumber: true })}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="role">Role</Label>
-                  <Input
-                    id="role"
-                    placeholder="Enter job role"
-                    {...form.register("role")}
-                  />
-                  {form.formState.errors.role && (
-                    <p className="text-sm text-red-500 mt-1">
-                      {form.formState.errors.role.message}
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
+              )}
+            </div>
 
             <div className="flex space-x-2">
               <Button type="button" variant="outline" className="flex-1" onClick={handleCloseModal}>

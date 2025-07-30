@@ -21,6 +21,9 @@ import { useQuery } from '@tanstack/react-query';
 import { ExportFunctions } from '@/components/export-functions';
 import { ImportFunctions } from '@/components/import-functions';
 import { NotificationManagement } from '@/components/notification-management';
+import { EventManagement } from '@/components/event-management';
+import { StudentManagement } from '@/components/student-management';
+import { AlumniManagement } from '@/components/alumni-management';
 import collegeHeaderImg from '@assets/Screenshot 2025-07-25 113411_1753423944040.png';
 import { useToast } from '@/hooks/use-toast';
 
@@ -249,41 +252,13 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-          {/* Events Tab (new navigation) */}
+          {/* Events Tab */}
           <TabsContent value="events">
-            {!selectedCompany ? (
-              <CompanyList companies={companies} onSelect={setSelectedCompany} />
-            ) : !selectedEventYear ? (
-              <>
-                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedCompany(null)}>Back</button>
-                <EventYearList years={eventYears} onSelect={setSelectedEventYear} />
-              </>
-            ) : !selectedEvent ? (
-              <>
-                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedEventYear(null)}>Back</button>
-                <EventList events={eventsNav} onSelect={setSelectedEvent} />
-              </>
-            ) : (
-              <EventDetails event={selectedEvent} onBack={() => setSelectedEvent(null)} />
-            )}
+            <EventManagement />
           </TabsContent>
-          {/* Students Tab (new navigation) */}
+          {/* Students Tab */}
           <TabsContent value="students">
-            {!selectedDept ? (
-              <DepartmentList departments={departments} onSelect={setSelectedDept} />
-            ) : !selectedStudentYear ? (
-              <>
-                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedDept(null)}>Back</button>
-                <StudentYearList years={studentYears} onSelect={setSelectedStudentYear} />
-              </>
-            ) : !selectedStudent ? (
-              <>
-                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedStudentYear(null)}>Back</button>
-                <StudentList students={studentsNav} onSelect={setSelectedStudent} />
-              </>
-            ) : (
-              <StudentDetails student={selectedStudent} onBack={() => setSelectedStudent(null)} />
-            )}
+            <StudentManagement />
           </TabsContent>
           {/* Attendance Tab */}
           <TabsContent value="attendance">
@@ -351,48 +326,7 @@ export default function AdminDashboard() {
           </TabsContent>
           {/* Alumni Tab */}
           <TabsContent value="alumni">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Alumni Database</CardTitle>
-                  <Button variant="outline" onClick={() => handleExport('/api/export/alumni', 'alumni.xlsx')}>
-                    <Download className="w-4 h-4 mr-2" /> Export Alumni
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {alumni.length === 0 ? (
-                    <p className="text-slate-600 text-center py-8">No alumni registered yet.</p>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-slate-200">
-                        <thead className="bg-slate-50">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Roll No</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Pass Out Year</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Higher Education</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Contact</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-slate-200">
-                          {alumni.map((alumnus) => (
-                            <tr key={alumnus.id}>
-                              <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-800">{alumnus.name}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">{alumnus.rollNumber}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">{alumnus.passOutYear}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">{alumnus.higherEducationCollege || 'Working'}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">{alumnus.contactNumber}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <AlumniManagement />
           </TabsContent>
           {/* Notifications Tab */}
           <TabsContent value="notifications">

@@ -14,17 +14,17 @@ import { insertEventSchema, Event } from "@shared/schema";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Edit, Trash2, Calendar } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, Building2, Clock, ExternalLink, FileText } from "lucide-react";
+import { format } from "date-fns";
 
 const eventFormSchema = insertEventSchema.extend({
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
-  attachmentUrl: z.string().optional(),
   notificationLink: z.string().optional(),
+  attachmentUrl: z.string().optional(),
 });
 
 type EventForm = z.infer<typeof eventFormSchema>;
-type EventWithStatus = Event & { status: string };
 
 export function EventManagement() {
   const [showEventModal, setShowEventModal] = useState(false);
@@ -32,7 +32,7 @@ export function EventManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: events = [], isLoading } = useQuery<EventWithStatus[]>({
+  const { data: events = [], isLoading } = useQuery<Event[]>({
     queryKey: ["/api/events"],
   });
 
@@ -44,19 +44,19 @@ export function EventManagement() {
       company: "",
       startDate: "",
       endDate: "",
-      attachmentUrl: "",
       notificationLink: "",
+      attachmentUrl: "",
     },
   });
 
   const createEventMutation = useMutation({
     mutationFn: async (data: EventForm) => {
-      const eventData = {
+      const formattedData = {
         ...data,
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
       };
-      const response = await apiRequest("POST", "/api/events", eventData);
+      const response = await apiRequest("POST", "/api/events", formattedData);
       return response.json();
     },
     onSuccess: () => {
@@ -79,12 +79,12 @@ export function EventManagement() {
   const updateEventMutation = useMutation({
     mutationFn: async (data: EventForm) => {
       if (!editingEvent) return;
-      const eventData = {
+      const formattedData = {
         ...data,
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
       };
-      const response = await apiRequest("PUT", `/api/events/${editingEvent.id}`, eventData);
+      const response = await apiRequest("PUT", `/api/events/${editingEvent.id}`, formattedData);
       return response.json();
     },
     onSuccess: () => {
@@ -132,8 +132,8 @@ export function EventManagement() {
       company: "",
       startDate: "",
       endDate: "",
-      attachmentUrl: "",
       notificationLink: "",
+      attachmentUrl: "",
     });
     setShowEventModal(true);
   };
@@ -142,12 +142,12 @@ export function EventManagement() {
     setEditingEvent(event);
     form.reset({
       title: event.title,
-      description: event.description,
+      description: event.description || "",
       company: event.company,
-      startDate: new Date(event.startDate).toISOString().slice(0, 16),
-      endDate: new Date(event.endDate).toISOString().slice(0, 16),
-      attachmentUrl: event.attachmentUrl || "",
+      startDate: event.startDate ? format(new Date(event.startDate), "yyyy-MM-dd'T'HH:mm") : "",
+      endDate: event.endDate ? format(new Date(event.endDate), "yyyy-MM-dd'T'HH:mm") : "",
       notificationLink: event.notificationLink || "",
+      attachmentUrl: event.attachmentUrl || "",
     });
     setShowEventModal(true);
   };
@@ -172,18 +172,37 @@ export function EventManagement() {
     }
   };
 
+  const getEventStatus = (event: Event) => {
+    if (!event.startDate || !event.endDate) return "upcoming";
+    const now = new Date();
+    const start = new Date(event.startDate);
+    const end = new Date(event.endDate);
+    
+    if (now < start) return "upcoming";
+    if (now >= start && now <= end) return "ongoing";
+    return "completed";
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ongoing':
-        return 'bg-green-500';
-      case 'upcoming':
-        return 'bg-blue-500';
-      case 'past':
-        return 'bg-slate-400';
+      case "ongoing":
+        return "bg-green-500";
+      case "upcoming":
+        return "bg-blue-500";
+      case "completed":
+        return "bg-gray-500";
       default:
-        return 'bg-slate-400';
+        return "bg-gray-500";
     }
   };
+
+  // Group events by company
+  const groupedEvents = events.reduce((acc, event) => {
+    const company = event.company || 'Unknown Company';
+    if (!acc[company]) acc[company] = [];
+    acc[company].push(event);
+    return acc;
+  }, {} as Record<string, Event[]>);
 
   if (isLoading) {
     return <div>Loading events...</div>;
@@ -192,71 +211,117 @@ export function EventManagement() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-semibold text-slate-800">Manage Events</h3>
-        <Button onClick={handleAddEvent}>
+        <div>
+          <h3 className="text-2xl font-semibold text-slate-800">Event Management</h3>
+          <p className="text-slate-600">Total Events: {events.length}</p>
+        </div>
+        <Button onClick={handleAddEvent} className="bg-primary text-white">
           <Plus className="w-4 h-4 mr-2" />
           Add Event
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {events.length === 0 ? (
-          <Card className="col-span-full">
-            <CardContent className="p-8 text-center">
-              <Calendar className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-              <p className="text-slate-600">No events created yet.</p>
-              <Button className="mt-4" onClick={handleAddEvent}>
-                Create your first event
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          events.map((event: EventWithStatus) => (
-            <Card key={event.id}>
+      {Object.keys(groupedEvents).length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Calendar className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+            <p className="text-slate-600">No events scheduled yet.</p>
+            <Button className="mt-4" onClick={handleAddEvent}>
+              Create your first event
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          {Object.entries(groupedEvents).map(([company, companyEvents]) => (
+            <Card key={company}>
               <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{event.title}</CardTitle>
-                    <p className="text-sm text-slate-600 mt-1">{event.company}</p>
-                  </div>
-                  <Badge className={`${getStatusColor(event.status)} text-white`}>
-                    {event.status.toUpperCase()}
-                  </Badge>
-                </div>
+                <CardTitle className="flex items-center">
+                  <Building2 className="w-5 h-5 mr-2" />
+                  {company}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-600 mb-4">{event.description}</p>
-                <p className="text-xs text-slate-500 mb-2">
-                  Start: {new Date(event.startDate).toLocaleString()}
-                </p>
-                <p className="text-xs text-slate-500 mb-4">
-                  End: {new Date(event.endDate).toLocaleString()}
-                </p>
-                <div className="flex space-x-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleEditEvent(event)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-red-600 border-red-300 hover:bg-red-50"
-                    onClick={() => handleDeleteEvent(event.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {companyEvents.map((event) => {
+                    const status = getEventStatus(event);
+                    return (
+                      <Card key={event.id} className="border">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex-1">
+                              <h5 className="font-medium text-slate-800">{event.title}</h5>
+                              <p className="text-sm text-slate-600 mt-1">{event.description}</p>
+                            </div>
+                            <Badge className={`${getStatusColor(status)} text-white`}>
+                              {status.toUpperCase()}
+                            </Badge>
+                          </div>
+                          
+                          {event.startDate && (
+                            <div className="flex items-center text-xs text-slate-500 mb-2">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {format(new Date(event.startDate), "MMM dd, yyyy 'at' HH:mm")}
+                            </div>
+                          )}
+
+                          {(event.notificationLink || event.attachmentUrl) && (
+                            <div className="flex gap-2 mb-3">
+                              {event.notificationLink && (
+                                <a 
+                                  href={event.notificationLink} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200"
+                                >
+                                  <ExternalLink className="w-3 h-3 mr-1" />
+                                  Link
+                                </a>
+                              )}
+                              {event.attachmentUrl && (
+                                <a 
+                                  href={event.attachmentUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200"
+                                >
+                                  <FileText className="w-3 h-3 mr-1" />
+                                  Attachment
+                                </a>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="flex space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditEvent(event)}
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 border-red-300 hover:bg-red-50"
+                              onClick={() => handleDeleteEvent(event.id)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       <Dialog open={showEventModal} onOpenChange={handleCloseModal}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingEvent ? "Edit Event" : "Add New Event"}
@@ -268,7 +333,7 @@ export function EventManagement() {
               <Label htmlFor="title">Event Title</Label>
               <Input
                 id="title"
-                placeholder="Enter event title"
+                placeholder="Event title"
                 {...form.register("title")}
               />
               {form.formState.errors.title && (
@@ -282,7 +347,7 @@ export function EventManagement() {
               <Label htmlFor="company">Company</Label>
               <Input
                 id="company"
-                placeholder="Enter company name"
+                placeholder="Company name"
                 {...form.register("company")}
               />
               {form.formState.errors.company && (
@@ -296,42 +361,38 @@ export function EventManagement() {
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                placeholder="Enter event description"
+                placeholder="Event description"
                 {...form.register("description")}
               />
-              {form.formState.errors.description && (
-                <p className="text-sm text-red-500 mt-1">
-                  {form.formState.errors.description.message}
-                </p>
-              )}
             </div>
 
-            <div>
-              <Label htmlFor="startDate">Start Date & Time</Label>
-              <Input
-                id="startDate"
-                type="datetime-local"
-                {...form.register("startDate")}
-              />
-              {form.formState.errors.startDate && (
-                <p className="text-sm text-red-500 mt-1">
-                  {form.formState.errors.startDate.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="endDate">End Date & Time</Label>
-              <Input
-                id="endDate"
-                type="datetime-local"
-                {...form.register("endDate")}
-              />
-              {form.formState.errors.endDate && (
-                <p className="text-sm text-red-500 mt-1">
-                  {form.formState.errors.endDate.message}
-                </p>
-              )}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="startDate">Start Date & Time</Label>
+                <Input
+                  id="startDate"
+                  type="datetime-local"
+                  {...form.register("startDate")}
+                />
+                {form.formState.errors.startDate && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {form.formState.errors.startDate.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="endDate">End Date & Time</Label>
+                <Input
+                  id="endDate"
+                  type="datetime-local"
+                  {...form.register("endDate")}
+                />
+                {form.formState.errors.endDate && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {form.formState.errors.endDate.message}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div>
@@ -342,18 +403,18 @@ export function EventManagement() {
                 placeholder="https://example.com/notification"
                 {...form.register("notificationLink")}
               />
-              <p className="text-xs text-slate-500 mt-1">Add a web link for this event notification</p>
+              <p className="text-xs text-slate-500 mt-1">Add a web link for additional information</p>
             </div>
 
             <div>
-              <Label htmlFor="attachmentUrl">Attachment File URL (Optional)</Label>
+              <Label htmlFor="attachmentUrl">Attachment URL (Optional)</Label>
               <Input
                 id="attachmentUrl"
                 type="url"
                 placeholder="https://example.com/document.pdf"
                 {...form.register("attachmentUrl")}
               />
-              <p className="text-xs text-slate-500 mt-1">Add a PDF or document link for this event</p>
+              <p className="text-xs text-slate-500 mt-1">Add a PDF or document link</p>
             </div>
 
             <div className="flex space-x-2">
