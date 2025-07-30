@@ -384,7 +384,7 @@ export function StudentManagement() {
                   render={({ field }) => (
                     <Checkbox
                       id="selected"
-                      checked={field.value}
+                      checked={field.value || false}
                       onCheckedChange={field.onChange}
                     />
                   )}

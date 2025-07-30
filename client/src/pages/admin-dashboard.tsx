@@ -27,6 +27,7 @@ import { NotificationManagement } from '@/components/notification-management';
 import { EventManagement } from '@/components/event-management';
 import { StudentManagement } from '@/components/student-management';
 import { AlumniManagement } from '@/components/alumni-management';
+import { AttendanceModal } from '@/components/attendance-modal';
 import collegeHeaderImg from '@assets/Screenshot 2025-07-25 113411_1753423944040.png';
 import { useToast } from '@/hooks/use-toast';
 
@@ -62,6 +63,13 @@ export default function AdminDashboard() {
   const [selectedAlumniYear, setSelectedAlumniYear] = useState<number | null>(null);
   const [alumniNav, setAlumniNav] = useState<any[]>([]);
   const [selectedAlumni, setSelectedAlumni] = useState<any | null>(null);
+
+  // Modal states for management components
+  const [showEventManagement, setShowEventManagement] = useState(false);
+  const [showStudentManagement, setShowStudentManagement] = useState(false);
+  const [showAlumniManagement, setShowAlumniManagement] = useState(false);
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [selectedEventForAttendance, setSelectedEventForAttendance] = useState<Event | null>(null);
 
   // Load departments, companies, and alumni years on mount
   useEffect(() => {
@@ -279,7 +287,7 @@ export default function AdminDashboard() {
               <>
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-2xl font-semibold text-slate-800">Events by Company</h3>
-                  <Button className="bg-primary text-white">
+                  <Button className="bg-primary text-white" onClick={() => setShowEventManagement(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Event
                   </Button>
@@ -290,7 +298,7 @@ export default function AdminDashboard() {
               <>
                 <div className="flex justify-between items-center mb-4">
                   <button className="px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedCompany(null)}>Back</button>
-                  <Button className="bg-primary text-white">
+                  <Button className="bg-primary text-white" onClick={() => setShowEventManagement(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Event
                   </Button>
@@ -301,7 +309,7 @@ export default function AdminDashboard() {
               <>
                 <div className="flex justify-between items-center mb-4">
                   <button className="px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedEventYear(null)}>Back</button>
-                  <Button className="bg-primary text-white">
+                  <Button className="bg-primary text-white" onClick={() => setShowEventManagement(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Event
                   </Button>
@@ -318,7 +326,7 @@ export default function AdminDashboard() {
               <>
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-2xl font-semibold text-slate-800">Students by Department</h3>
-                  <Button className="bg-primary text-white">
+                  <Button className="bg-primary text-white" onClick={() => setShowStudentManagement(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Student
                   </Button>
@@ -329,7 +337,7 @@ export default function AdminDashboard() {
               <>
                 <div className="flex justify-between items-center mb-4">
                   <button className="px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedDept(null)}>Back</button>
-                  <Button className="bg-primary text-white">
+                  <Button className="bg-primary text-white" onClick={() => setShowStudentManagement(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Student
                   </Button>
@@ -340,7 +348,7 @@ export default function AdminDashboard() {
               <>
                 <div className="flex justify-between items-center mb-4">
                   <button className="px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedStudentYear(null)}>Back</button>
-                  <Button className="bg-primary text-white">
+                  <Button className="bg-primary text-white" onClick={() => setShowStudentManagement(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Student
                   </Button>
@@ -357,7 +365,21 @@ export default function AdminDashboard() {
               <>
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-2xl font-semibold text-slate-800">Attendance by Department</h3>
-                  <Button className="bg-primary text-white">
+                  <Button 
+                    className="bg-primary text-white" 
+                    onClick={() => {
+                      if (events.length > 0) {
+                        setSelectedEventForAttendance(events[0]);
+                        setShowAttendanceModal(true);
+                      } else {
+                        toast({
+                          title: "No Events Available",
+                          description: "Please create an event first before marking attendance.",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Attendance
                   </Button>
@@ -368,7 +390,21 @@ export default function AdminDashboard() {
               <>
                 <div className="flex justify-between items-center mb-4">
                   <button className="px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedDept(null)}>Back</button>
-                  <Button className="bg-primary text-white">
+                  <Button 
+                    className="bg-primary text-white" 
+                    onClick={() => {
+                      if (events.length > 0) {
+                        setSelectedEventForAttendance(events[0]);
+                        setShowAttendanceModal(true);
+                      } else {
+                        toast({
+                          title: "No Events Available",
+                          description: "Please create an event first before marking attendance.",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Attendance
                   </Button>
@@ -380,7 +416,21 @@ export default function AdminDashboard() {
                 <div className="flex justify-between items-center mb-4">
                   <button className="px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedStudentYear(null)}>Back</button>
                   <div className="space-x-2">
-                    <Button className="bg-primary text-white">
+                    <Button 
+                      className="bg-primary text-white" 
+                      onClick={() => {
+                        if (events.length > 0) {
+                          setSelectedEventForAttendance(events[0]);
+                          setShowAttendanceModal(true);
+                        } else {
+                          toast({
+                            title: "No Events Available",
+                            description: "Please create an event first before marking attendance.",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Add Attendance
                     </Button>
@@ -450,7 +500,7 @@ export default function AdminDashboard() {
               <>
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-2xl font-semibold text-slate-800">Alumni by Pass Out Year</h3>
-                  <Button className="bg-primary text-white">
+                  <Button className="bg-primary text-white" onClick={() => setShowAlumniManagement(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Alumni
                   </Button>
@@ -461,7 +511,7 @@ export default function AdminDashboard() {
               <>
                 <div className="flex justify-between items-center mb-4">
                   <button className="px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedAlumniYear(null)}>Back</button>
-                  <Button className="bg-primary text-white">
+                  <Button className="bg-primary text-white" onClick={() => setShowAlumniManagement(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Alumni
                   </Button>
@@ -486,6 +536,62 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Management Component Modals */}
+      {showEventManagement && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-semibold">Event Management</h2>
+                <Button variant="outline" onClick={() => setShowEventManagement(false)}>
+                  Close
+                </Button>
+              </div>
+              <EventManagement />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showStudentManagement && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-semibold">Student Management</h2>
+                <Button variant="outline" onClick={() => setShowStudentManagement(false)}>
+                  Close
+                </Button>
+              </div>
+              <StudentManagement />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAlumniManagement && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-semibold">Alumni Management</h2>
+                <Button variant="outline" onClick={() => setShowAlumniManagement(false)}>
+                  Close
+                </Button>
+              </div>
+              <AlumniManagement />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Attendance Modal */}
+      <AttendanceModal 
+        open={showAttendanceModal}
+        onOpenChange={setShowAttendanceModal}
+        event={selectedEventForAttendance}
+      />
     </div>
   );
 }
