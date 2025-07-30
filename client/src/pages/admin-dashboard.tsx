@@ -1,66 +1,111 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { 
-  BarChart3, Users, Briefcase, GraduationCap, 
-  Calendar, Settings, Download, LogOut,
-  Plus, Edit, Trash2, FileText
-} from "lucide-react";
-import { useLocation } from "wouter";
-import { EventManagement } from "@/components/event-management";
-import { StudentManagement } from "@/components/student-management";
-import { ExportFunctions } from "@/components/export-functions";
-import { Event, Student, Alumni, Attendance } from "@shared/schema";
-import { useToast } from "@/hooks/use-toast";
-import collegeHeaderImg from "@assets/Screenshot 2025-07-25 113411_1753423944040.png";
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { useLocation } from 'wouter';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { BarChart3, Users, Briefcase, GraduationCap, Calendar, Settings, Download, LogOut, Plus, Edit, Trash2, FileText } from 'lucide-react';
+import { DepartmentList } from '@/components/tpo/students/department-list';
+import { YearList as StudentYearList } from '@/components/tpo/students/year-list';
+import { StudentList } from '@/components/tpo/students/student-list';
+import { StudentDetails } from '@/components/tpo/students/student-details';
+import { CompanyList } from '@/components/tpo/events/company-list';
+import { YearList as EventYearList } from '@/components/tpo/events/year-list';
+import { EventList } from '@/components/tpo/events/event-list';
+import { EventDetails } from '@/components/tpo/events/event-details';
+import { fetchDepartments, fetchYears as fetchStudentYears, fetchStudentsByDepartmentYear } from '@/api/students';
+import { fetchCompanies, fetchYears as fetchEventYears, fetchEventsByCompanyYear } from '@/api/events';
+import { Event, Student, Alumni, Attendance } from '@shared/schema';
+import { useQuery } from '@tanstack/react-query';
+import { ExportFunctions } from '@/components/export-functions';
+import { ImportFunctions } from '@/components/import-functions';
+import collegeHeaderImg from '@assets/Screenshot 2025-07-25 113411_1753423944040.png';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminDashboard() {
   const { user, logoutMutation } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const { data: events = [] } = useQuery<Event[]>({
-    queryKey: ["/api/events"],
-  });
+  // Existing dashboard data
+  const { data: events = [] } = useQuery<Event[]>({ queryKey: ['/api/events'] });
+  const { data: students = [] } = useQuery<Student[]>({ queryKey: ['/api/students'] });
+  const { data: alumni = [] } = useQuery<Alumni[]>({ queryKey: ['/api/alumni'] });
+  const { data: attendance = [] } = useQuery<Attendance[]>({ queryKey: ['/api/attendance'] });
 
-  const { data: students = [] } = useQuery<Student[]>({
-    queryKey: ["/api/students"],
-  });
+  // Students navigation state
+  const [departments, setDepartments] = useState<string[]>([]);
+  const [selectedDept, setSelectedDept] = useState<string | null>(null);
+  const [studentYears, setStudentYears] = useState<number[]>([]);
+  const [selectedStudentYear, setSelectedStudentYear] = useState<number | null>(null);
+  const [studentsNav, setStudentsNav] = useState<any[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
 
-  const { data: alumni = [] } = useQuery<Alumni[]>({
-    queryKey: ["/api/alumni"],
-  });
+  // Events navigation state
+  const [companies, setCompanies] = useState<string[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [eventYears, setEventYears] = useState<number[]>([]);
+  const [selectedEventYear, setSelectedEventYear] = useState<number | null>(null);
+  const [eventsNav, setEventsNav] = useState<any[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
 
-  const { data: attendance = [] } = useQuery<Attendance[]>({
-    queryKey: ["/api/attendance"],
-  });
+  // Load departments and companies on mount
+  useEffect(() => {
+    fetchDepartments().then((d) => setDepartments(d as string[]));
+    fetchCompanies().then((c) => setCompanies(c as string[]));
+  }, []);
+
+  // Load years when department/company is selected
+  useEffect(() => {
+    if (selectedDept) {
+      fetchStudentYears(selectedDept).then((y) => setStudentYears(y as number[]));
+      setSelectedStudentYear(null);
+      setStudentsNav([]);
+      setSelectedStudent(null);
+    }
+  }, [selectedDept]);
+
+  useEffect(() => {
+    if (selectedCompany) {
+      fetchEventYears(selectedCompany).then((y) => setEventYears(y as number[]));
+      setSelectedEventYear(null);
+      setEventsNav([]);
+      setSelectedEvent(null);
+    }
+  }, [selectedCompany]);
+
+  // Load students/events when year is selected
+  useEffect(() => {
+    if (selectedDept && selectedStudentYear !== null) {
+      fetchStudentsByDepartmentYear(selectedDept, selectedStudentYear).then(setStudentsNav);
+      setSelectedStudent(null);
+    }
+  }, [selectedDept, selectedStudentYear]);
+
+  useEffect(() => {
+    if (selectedCompany && selectedEventYear !== null) {
+      fetchEventsByCompanyYear(selectedCompany, selectedEventYear).then(setEventsNav);
+      setSelectedEvent(null);
+    }
+  }, [selectedCompany, selectedEventYear]);
 
   const handleLogout = async () => {
     try {
       await logoutMutation.mutateAsync();
-      setLocation("/");
-    } catch (error) {
-      // Error handled by mutation
-    }
+      setLocation('/');
+    } catch (error) {}
   };
 
   const handleExport = async (endpoint: string, filename: string) => {
     try {
       const response = await fetch(endpoint, {
-        credentials: "include",
+        credentials: 'include',
         headers: {
           'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         },
       });
-
-      if (!response.ok) {
-        throw new Error("Export failed");
-      }
-
+      if (!response.ok) throw new Error('Export failed');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -71,17 +116,9 @@ export default function AdminDashboard() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-
-      toast({
-        title: "Success",
-        description: "File exported successfully!",
-      });
+      toast({ title: 'Success', description: 'File exported successfully!' });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to export file",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Failed to export file', variant: 'destructive' });
     }
   };
 
@@ -99,7 +136,6 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <img src={collegeHeaderImg} alt="KITS Logo" className="h-8 mr-3" />
               <div className="flex flex-col">
                 <h1 className="text-lg font-bold text-slate-800">KITS TPO Dashboard</h1>
                 <span className="text-xs text-slate-600">Akshar Institute of Technology</span>
@@ -107,31 +143,26 @@ export default function AdminDashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-slate-600">Welcome, {user?.username}</span>
-              <Button 
-                variant="ghost" 
-                className="text-red-600 hover:text-red-700"
-                onClick={handleLogout}
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+              <Button variant="ghost" className="text-red-600 hover:text-red-700" onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" /> Logout
               </Button>
             </div>
           </div>
         </div>
       </div>
-
       {/* Dashboard Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-8">
+          <TabsList className="grid w-full grid-cols-9 mb-8">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="events">Events</TabsTrigger>
             <TabsTrigger value="students">Students</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="alumni">Alumni</TabsTrigger>
             <TabsTrigger value="exports">Exports</TabsTrigger>
+            <TabsTrigger value="imports">Imports</TabsTrigger>
+            {/* Add more tabs as needed */}
           </TabsList>
-
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             {/* Stats Cards */}
@@ -149,7 +180,6 @@ export default function AdminDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center">
@@ -163,7 +193,6 @@ export default function AdminDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center">
@@ -177,7 +206,6 @@ export default function AdminDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center">
@@ -192,7 +220,6 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </div>
-
             {/* Recent Activities */}
             <Card>
               <CardHeader>
@@ -200,20 +227,20 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {events.slice(0, 5).map((event) => (
-                    <div key={event.id} className="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg">
-                      <div className={`w-2 h-2 rounded-full ${
-                        event.status === 'ongoing' ? 'bg-green-500' : 
-                        event.status === 'upcoming' ? 'bg-blue-500' : 'bg-slate-400'
-                      }`}></div>
-                      <span className="text-sm text-slate-600">
-                        {event.title} - {event.company} ({event.status})
-                      </span>
-                      <span className="text-xs text-slate-500 ml-auto">
-                        {new Date(event.eventDate).toLocaleDateString()}
-                      </span>
-                    </div>
-                  ))}
+                  {events.slice(0, 5).map((event) => {
+                    let dateStr = 'Date not available';
+                    if (event.startDate && !isNaN(new Date(event.startDate).getTime())) {
+                      dateStr = new Date(event.startDate).toLocaleDateString();
+                    }
+                    const status = (event as any).status || 'upcoming';
+                    return (
+                      <div key={event.id} className="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg">
+                        <div className={`w-2 h-2 rounded-full ${status === 'ongoing' ? 'bg-green-500' : status === 'upcoming' ? 'bg-blue-500' : 'bg-slate-400'}`}></div>
+                        <span className="text-sm text-slate-600">{event.title} - {event.company} ({status})</span>
+                        <span className="text-xs text-slate-500 ml-auto">{dateStr}</span>
+                      </div>
+                    );
+                  })}
                   {events.length === 0 && (
                     <p className="text-slate-600 text-center py-8">No recent activities.</p>
                   )}
@@ -221,29 +248,50 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-
-          {/* Events Tab */}
+          {/* Events Tab (new navigation) */}
           <TabsContent value="events">
-            <EventManagement />
+            {!selectedCompany ? (
+              <CompanyList companies={companies} onSelect={setSelectedCompany} />
+            ) : !selectedEventYear ? (
+              <>
+                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedCompany(null)}>Back</button>
+                <EventYearList years={eventYears} onSelect={setSelectedEventYear} />
+              </>
+            ) : !selectedEvent ? (
+              <>
+                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedEventYear(null)}>Back</button>
+                <EventList events={eventsNav} onSelect={setSelectedEvent} />
+              </>
+            ) : (
+              <EventDetails event={selectedEvent} onBack={() => setSelectedEvent(null)} />
+            )}
           </TabsContent>
-
-          {/* Students Tab */}
+          {/* Students Tab (new navigation) */}
           <TabsContent value="students">
-            <StudentManagement />
+            {!selectedDept ? (
+              <DepartmentList departments={departments} onSelect={setSelectedDept} />
+            ) : !selectedStudentYear ? (
+              <>
+                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedDept(null)}>Back</button>
+                <StudentYearList years={studentYears} onSelect={setSelectedStudentYear} />
+              </>
+            ) : !selectedStudent ? (
+              <>
+                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedStudentYear(null)}>Back</button>
+                <StudentList students={studentsNav} onSelect={setSelectedStudent} />
+              </>
+            ) : (
+              <StudentDetails student={selectedStudent} onBack={() => setSelectedStudent(null)} />
+            )}
           </TabsContent>
-
           {/* Attendance Tab */}
           <TabsContent value="attendance">
             <Card>
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>Attendance Records</CardTitle>
-                  <Button 
-                    variant="outline"
-                    onClick={() => handleExport("/api/export/attendance", "attendance.xlsx")}
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Export Attendance
+                  <Button variant="outline" onClick={() => handleExport('/api/export/attendance', 'attendance.xlsx')}>
+                    <Download className="w-4 h-4 mr-2" /> Export Attendance
                   </Button>
                 </div>
               </CardHeader>
@@ -256,35 +304,19 @@ export default function AdminDashboard() {
                       <table className="min-w-full divide-y divide-slate-200">
                         <thead className="bg-slate-50">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                              Student Name
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                              Roll Number
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                              Event
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                              Date
-                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Roll Number</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Event</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-slate-200">
                           {attendance.map((record) => (
                             <tr key={record.id}>
-                              <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-800">
-                                {record.studentName}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                                {record.rollNumber}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                                Event #{record.eventId}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                                {new Date(record.markedAt!).toLocaleDateString()}
-                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-800">{record.studentName}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">{record.rollNumber}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">Event #{record.eventId}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">{new Date(record.markedAt!).toLocaleDateString()}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -295,19 +327,14 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-
           {/* Alumni Tab */}
           <TabsContent value="alumni">
             <Card>
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>Alumni Database</CardTitle>
-                  <Button 
-                    variant="outline"
-                    onClick={() => handleExport("/api/export/alumni", "alumni.xlsx")}
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Export Alumni
+                  <Button variant="outline" onClick={() => handleExport('/api/export/alumni', 'alumni.xlsx')}>
+                    <Download className="w-4 h-4 mr-2" /> Export Alumni
                   </Button>
                 </div>
               </CardHeader>
@@ -320,41 +347,21 @@ export default function AdminDashboard() {
                       <table className="min-w-full divide-y divide-slate-200">
                         <thead className="bg-slate-50">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                              Name
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                              Roll No
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                              Pass Out Year
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                              Higher Education
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                              Contact
-                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Roll No</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Pass Out Year</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Higher Education</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Contact</th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-slate-200">
                           {alumni.map((alumnus) => (
                             <tr key={alumnus.id}>
-                              <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-800">
-                                {alumnus.name}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                                {alumnus.rollNumber}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                                {alumnus.passOutYear}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                                {alumnus.higherEducationCollege || 'Working'}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                                {alumnus.contactNumber}
-                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-800">{alumnus.name}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">{alumnus.rollNumber}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">{alumnus.passOutYear}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">{alumnus.higherEducationCollege || 'Working'}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-slate-600">{alumnus.contactNumber}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -365,10 +372,13 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-
           {/* Exports Tab */}
           <TabsContent value="exports">
             <ExportFunctions />
+          </TabsContent>
+          {/* Imports Tab */}
+          <TabsContent value="imports">
+            <ImportFunctions />
           </TabsContent>
         </Tabs>
       </div>

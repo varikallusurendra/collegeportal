@@ -24,8 +24,9 @@ export const events = pgTable("events", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   company: text("company").notNull(),
-  eventDate: timestamp("event_date").notNull(),
-  status: text("status").notNull(), // ongoing, upcoming, past
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  // status: text("status").notNull(), // Status is now computed, not stored
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -35,12 +36,15 @@ export const students = pgTable("students", {
   name: text("name").notNull(),
   rollNumber: text("roll_number").notNull().unique(),
   branch: text("branch"),
+  year: integer("year"), // Added year field
   email: text("email"),
   phone: text("phone"),
   photoUrl: text("photo_url"),
   selected: boolean("selected").default(false),
   companyName: text("company_name"),
   offerLetterUrl: text("offer_letter_url"),
+  package: integer("package"), // LPA, only for placed students
+  role: text("role"), // only for placed students
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -64,6 +68,25 @@ export const attendance = pgTable("attendance", {
   studentName: text("student_name").notNull(),
   rollNumber: text("roll_number").notNull(),
   markedAt: timestamp("marked_at").defaultNow(),
+});
+
+export const heroNotifications = pgTable("hero_notifications", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  type: text("type").notNull(),
+  link: text("link"),
+  icon: text("icon"), // icon name for frontend
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const importantNotifications = pgTable("important_notifications", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  type: text("type").notNull(),
+  link: text("link"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Relations
@@ -112,6 +135,9 @@ export const insertAttendanceSchema = createInsertSchema(attendance).omit({
   markedAt: true,
 });
 
+export const insertHeroNotificationSchema = createInsertSchema(heroNotifications).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertImportantNotificationSchema = createInsertSchema(importantNotifications).omit({ id: true, createdAt: true, updatedAt: true });
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -125,3 +151,7 @@ export type Alumni = typeof alumni.$inferSelect;
 export type InsertAlumni = z.infer<typeof insertAlumniSchema>;
 export type Attendance = typeof attendance.$inferSelect;
 export type InsertAttendance = z.infer<typeof insertAttendanceSchema>;
+export type HeroNotification = typeof heroNotifications.$inferSelect;
+export type InsertHeroNotification = z.infer<typeof insertHeroNotificationSchema>;
+export type ImportantNotification = typeof importantNotifications.$inferSelect;
+export type InsertImportantNotification = z.infer<typeof insertImportantNotificationSchema>;

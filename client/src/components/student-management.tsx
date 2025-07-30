@@ -40,6 +40,8 @@ export function StudentManagement() {
       companyName: "",
       photoUrl: "",
       offerLetterUrl: "",
+      package: undefined,
+      role: "",
     },
   });
 
@@ -119,6 +121,8 @@ export function StudentManagement() {
       companyName: "",
       photoUrl: "",
       offerLetterUrl: "",
+      package: undefined,
+      role: "",
     });
     setShowStudentModal(true);
   };
@@ -135,6 +139,8 @@ export function StudentManagement() {
       companyName: student.companyName || "",
       photoUrl: student.photoUrl || "",
       offerLetterUrl: student.offerLetterUrl || "",
+      package: student.package || undefined,
+      role: student.role || "",
     });
     setShowStudentModal(true);
   };
@@ -369,6 +375,34 @@ export function StudentManagement() {
                     type="file"
                     accept=".pdf,.doc,.docx"
                   />
+                </div>
+                <div>
+                  <Label htmlFor="package">Package (LPA)</Label>
+                  <Input
+                    id="package"
+                    type="number"
+                    step="0.1"
+                    placeholder="Enter package in LPA"
+                    {...form.register("package", { valueAsNumber: true })}
+                  />
+                  {form.formState.errors.package && (
+                    <p className="text-sm text-red-500 mt-1">
+                      {form.formState.errors.package.message}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="role">Role</Label>
+                  <Input
+                    id="role"
+                    placeholder="Enter job role"
+                    {...form.register("role")}
+                  />
+                  {form.formState.errors.role && (
+                    <p className="text-sm text-red-500 mt-1">
+                      {form.formState.errors.role.message}
+                    </p>
+                  )}
                 </div>
               </>
             )}

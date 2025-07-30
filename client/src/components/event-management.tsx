@@ -17,10 +17,12 @@ import { z } from "zod";
 import { Plus, Edit, Trash2, Calendar } from "lucide-react";
 
 const eventFormSchema = insertEventSchema.extend({
-  eventDate: z.string().min(1, "Event date is required"),
+  startDate: z.string().min(1, "Start date is required"),
+  endDate: z.string().min(1, "End date is required"),
 });
 
 type EventForm = z.infer<typeof eventFormSchema>;
+type EventWithStatus = Event & { status: string };
 
 export function EventManagement() {
   const [showEventModal, setShowEventModal] = useState(false);
@@ -28,7 +30,7 @@ export function EventManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: events = [], isLoading } = useQuery<Event[]>({
+  const { data: events = [], isLoading } = useQuery<EventWithStatus[]>({
     queryKey: ["/api/events"],
   });
 
@@ -38,8 +40,8 @@ export function EventManagement() {
       title: "",
       description: "",
       company: "",
-      eventDate: "",
-      status: "upcoming",
+      startDate: "",
+      endDate: "",
     },
   });
 
@@ -47,7 +49,8 @@ export function EventManagement() {
     mutationFn: async (data: EventForm) => {
       const eventData = {
         ...data,
-        eventDate: new Date(data.eventDate),
+        startDate: new Date(data.startDate),
+        endDate: new Date(data.endDate),
       };
       const response = await apiRequest("POST", "/api/events", eventData);
       return response.json();
@@ -74,7 +77,8 @@ export function EventManagement() {
       if (!editingEvent) return;
       const eventData = {
         ...data,
-        eventDate: new Date(data.eventDate),
+        startDate: new Date(data.startDate),
+        endDate: new Date(data.endDate),
       };
       const response = await apiRequest("PUT", `/api/events/${editingEvent.id}`, eventData);
       return response.json();
@@ -122,8 +126,8 @@ export function EventManagement() {
       title: "",
       description: "",
       company: "",
-      eventDate: "",
-      status: "upcoming",
+      startDate: "",
+      endDate: "",
     });
     setShowEventModal(true);
   };
@@ -134,8 +138,8 @@ export function EventManagement() {
       title: event.title,
       description: event.description,
       company: event.company,
-      eventDate: new Date(event.eventDate).toISOString().slice(0, 16),
-      status: event.status,
+      startDate: new Date(event.startDate).toISOString().slice(0, 16),
+      endDate: new Date(event.endDate).toISOString().slice(0, 16),
     });
     setShowEventModal(true);
   };
@@ -199,7 +203,7 @@ export function EventManagement() {
             </CardContent>
           </Card>
         ) : (
-          events.map((event) => (
+          events.map((event: EventWithStatus) => (
             <Card key={event.id}>
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -214,8 +218,11 @@ export function EventManagement() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-slate-600 mb-4">{event.description}</p>
+                <p className="text-xs text-slate-500 mb-2">
+                  Start: {new Date(event.startDate).toLocaleString()}
+                </p>
                 <p className="text-xs text-slate-500 mb-4">
-                  {new Date(event.eventDate).toLocaleString()}
+                  End: {new Date(event.endDate).toLocaleString()}
                 </p>
                 <div className="flex space-x-2">
                   <Button
@@ -292,40 +299,29 @@ export function EventManagement() {
             </div>
 
             <div>
-              <Label htmlFor="eventDate">Event Date & Time</Label>
+              <Label htmlFor="startDate">Start Date & Time</Label>
               <Input
-                id="eventDate"
+                id="startDate"
                 type="datetime-local"
-                {...form.register("eventDate")}
+                {...form.register("startDate")}
               />
-              {form.formState.errors.eventDate && (
+              {form.formState.errors.startDate && (
                 <p className="text-sm text-red-500 mt-1">
-                  {form.formState.errors.eventDate.message}
+                  {form.formState.errors.startDate.message}
                 </p>
               )}
             </div>
 
             <div>
-              <Label htmlFor="status">Status</Label>
-              <Controller
-                name="status"
-                control={form.control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="upcoming">Upcoming</SelectItem>
-                      <SelectItem value="ongoing">Ongoing</SelectItem>
-                      <SelectItem value="past">Past</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
+              <Label htmlFor="endDate">End Date & Time</Label>
+              <Input
+                id="endDate"
+                type="datetime-local"
+                {...form.register("endDate")}
               />
-              {form.formState.errors.status && (
+              {form.formState.errors.endDate && (
                 <p className="text-sm text-red-500 mt-1">
-                  {form.formState.errors.status.message}
+                  {form.formState.errors.endDate.message}
                 </p>
               )}
             </div>
