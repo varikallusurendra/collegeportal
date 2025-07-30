@@ -178,14 +178,30 @@ export default function HomePage() {
                       <div className="space-y-3">
                         {defaultNotifications.map((note, idx) => {
                           const Icon = note.icon;
-                          return (
-                            <div key={idx} className="flex items-center p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                          const NotificationContent = (
+                            <div className="flex items-center p-3 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors cursor-pointer">
                               <Icon className="w-5 h-5 text-orange-500 mr-3" />
                               <div className="flex-1">
                                 <h3 className="font-semibold text-slate-800 text-sm">{note.title}</h3>
                                 <p className="text-slate-600 text-xs mt-1">{note.description}</p>
                               </div>
                               <Badge className="text-xs bg-orange-500 text-white">{note.type}</Badge>
+                            </div>
+                          );
+                          
+                          return note.link ? (
+                            <a 
+                              key={idx} 
+                              href={note.link} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="block"
+                            >
+                              {NotificationContent}
+                            </a>
+                          ) : (
+                            <div key={idx}>
+                              {NotificationContent}
                             </div>
                           );
                         })}
