@@ -48,6 +48,7 @@ export interface IStorage {
   getAllAlumni(): Promise<Alumni[]>;
   createAlumni(alumni: InsertAlumni): Promise<Alumni>;
   updateAlumni(id: number, alumni: Partial<InsertAlumni>): Promise<Alumni | undefined>;
+  deleteAlumni(id: number): Promise<boolean>;
 
   // Attendance methods
   getAllAttendance(): Promise<Attendance[]>;
@@ -217,6 +218,11 @@ export class DatabaseStorage implements IStorage {
       .where(eq(alumni.id, id))
       .returning();
     return updatedAlumni || undefined;
+  }
+
+  async deleteAlumni(id: number): Promise<boolean> {
+    const result = await db.delete(alumni).where(eq(alumni.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Attendance methods

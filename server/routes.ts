@@ -298,6 +298,23 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.delete("/api/students/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteStudent(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+      
+      res.sendStatus(204);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete student" });
+    }
+  });
+
   // Alumni routes
   app.get("/api/alumni", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -351,6 +368,23 @@ export function registerRoutes(app: Express): Server {
       } else {
         res.status(400).json({ message: "Invalid alumni data" });
       }
+    }
+  });
+
+  app.delete("/api/alumni/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteAlumni(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Alumni not found" });
+      }
+      
+      res.sendStatus(204);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete alumni" });
     }
   });
 
