@@ -14,6 +14,9 @@ import { CompanyList } from '@/components/tpo/events/company-list';
 import { YearList as EventYearList } from '@/components/tpo/events/year-list';
 import { EventList } from '@/components/tpo/events/event-list';
 import { EventDetails } from '@/components/tpo/events/event-details';
+import { YearList as AlumniYearList } from '@/components/tpo/alumni/year-list';
+import { AlumniList } from '@/components/tpo/alumni/alumni-list';
+import { AlumniDetails } from '@/components/tpo/alumni/alumni-details';
 import { fetchDepartments, fetchYears as fetchStudentYears, fetchStudentsByDepartmentYear } from '@/api/students';
 import { fetchCompanies, fetchYears as fetchEventYears, fetchEventsByCompanyYear } from '@/api/events';
 import { Event, Student, Alumni, Attendance } from '@shared/schema';
@@ -54,11 +57,20 @@ export default function AdminDashboard() {
   const [eventsNav, setEventsNav] = useState<any[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
 
-  // Load departments and companies on mount
+  // Alumni navigation state
+  const [alumniYears, setAlumniYears] = useState<number[]>([]);
+  const [selectedAlumniYear, setSelectedAlumniYear] = useState<number | null>(null);
+  const [alumniNav, setAlumniNav] = useState<any[]>([]);
+  const [selectedAlumni, setSelectedAlumni] = useState<any | null>(null);
+
+  // Load departments, companies, and alumni years on mount
   useEffect(() => {
     fetchDepartments().then((d) => setDepartments(d as string[]));
     fetchCompanies().then((c) => setCompanies(c as string[]));
-  }, []);
+    // Extract unique alumni pass out years
+    const years = Array.from(new Set(alumni.map(a => a.passOutYear))).sort((a, b) => b - a);
+    setAlumniYears(years);
+  }, [alumni]);
 
   // Load years when department/company is selected
   useEffect(() => {
@@ -93,6 +105,15 @@ export default function AdminDashboard() {
       setSelectedEvent(null);
     }
   }, [selectedCompany, selectedEventYear]);
+
+  // Load alumni when year is selected
+  useEffect(() => {
+    if (selectedAlumniYear) {
+      const filtered = alumni.filter(a => a.passOutYear === selectedAlumniYear);
+      setAlumniNav(filtered);
+      setSelectedAlumni(null);
+    }
+  }, [selectedAlumniYear, alumni]);
 
   const handleLogout = async () => {
     try {
@@ -254,11 +275,39 @@ export default function AdminDashboard() {
           </TabsContent>
           {/* Events Tab */}
           <TabsContent value="events">
-            <EventManagement />
+            {!selectedCompany ? (
+              <CompanyList companies={companies} onSelect={setSelectedCompany} />
+            ) : !selectedEventYear ? (
+              <>
+                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedCompany(null)}>Back</button>
+                <EventYearList years={eventYears} onSelect={setSelectedEventYear} />
+              </>
+            ) : !selectedEvent ? (
+              <>
+                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedEventYear(null)}>Back</button>
+                <EventList events={eventsNav} onSelect={setSelectedEvent} />
+              </>
+            ) : (
+              <EventDetails event={selectedEvent} onBack={() => setSelectedEvent(null)} />
+            )}
           </TabsContent>
           {/* Students Tab */}
           <TabsContent value="students">
-            <StudentManagement />
+            {!selectedDept ? (
+              <DepartmentList departments={departments} onSelect={setSelectedDept} />
+            ) : !selectedStudentYear ? (
+              <>
+                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedDept(null)}>Back</button>
+                <StudentYearList years={studentYears} onSelect={setSelectedStudentYear} />
+              </>
+            ) : !selectedStudent ? (
+              <>
+                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedStudentYear(null)}>Back</button>
+                <StudentList students={studentsNav} onSelect={setSelectedStudent} />
+              </>
+            ) : (
+              <StudentDetails student={selectedStudent} onBack={() => setSelectedStudent(null)} />
+            )}
           </TabsContent>
           {/* Attendance Tab */}
           <TabsContent value="attendance">
@@ -326,7 +375,16 @@ export default function AdminDashboard() {
           </TabsContent>
           {/* Alumni Tab */}
           <TabsContent value="alumni">
-            <AlumniManagement />
+            {!selectedAlumniYear ? (
+              <AlumniYearList years={alumniYears} onSelect={setSelectedAlumniYear} />
+            ) : !selectedAlumni ? (
+              <>
+                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedAlumniYear(null)}>Back</button>
+                <AlumniList alumni={alumniNav} onSelect={setSelectedAlumni} />
+              </>
+            ) : (
+              <AlumniDetails alumni={selectedAlumni} onBack={() => setSelectedAlumni(null)} />
+            )}
           </TabsContent>
           {/* Notifications Tab */}
           <TabsContent value="notifications">
