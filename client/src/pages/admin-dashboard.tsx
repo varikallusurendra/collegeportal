@@ -276,15 +276,36 @@ export default function AdminDashboard() {
           {/* Events Tab */}
           <TabsContent value="events">
             {!selectedCompany ? (
-              <CompanyList companies={companies} onSelect={setSelectedCompany} />
+              <>
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-2xl font-semibold text-slate-800">Events by Company</h3>
+                  <Button className="bg-primary text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Event
+                  </Button>
+                </div>
+                <CompanyList companies={companies} onSelect={setSelectedCompany} />
+              </>
             ) : !selectedEventYear ? (
               <>
-                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedCompany(null)}>Back</button>
+                <div className="flex justify-between items-center mb-4">
+                  <button className="px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedCompany(null)}>Back</button>
+                  <Button className="bg-primary text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Event
+                  </Button>
+                </div>
                 <EventYearList years={eventYears} onSelect={setSelectedEventYear} />
               </>
             ) : !selectedEvent ? (
               <>
-                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedEventYear(null)}>Back</button>
+                <div className="flex justify-between items-center mb-4">
+                  <button className="px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedEventYear(null)}>Back</button>
+                  <Button className="bg-primary text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Event
+                  </Button>
+                </div>
                 <EventList events={eventsNav} onSelect={setSelectedEvent} />
               </>
             ) : (
@@ -294,15 +315,36 @@ export default function AdminDashboard() {
           {/* Students Tab */}
           <TabsContent value="students">
             {!selectedDept ? (
-              <DepartmentList departments={departments} onSelect={setSelectedDept} />
+              <>
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-2xl font-semibold text-slate-800">Students by Department</h3>
+                  <Button className="bg-primary text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Student
+                  </Button>
+                </div>
+                <DepartmentList departments={departments} onSelect={setSelectedDept} />
+              </>
             ) : !selectedStudentYear ? (
               <>
-                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedDept(null)}>Back</button>
+                <div className="flex justify-between items-center mb-4">
+                  <button className="px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedDept(null)}>Back</button>
+                  <Button className="bg-primary text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Student
+                  </Button>
+                </div>
                 <StudentYearList years={studentYears} onSelect={setSelectedStudentYear} />
               </>
             ) : !selectedStudent ? (
               <>
-                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedStudentYear(null)}>Back</button>
+                <div className="flex justify-between items-center mb-4">
+                  <button className="px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedStudentYear(null)}>Back</button>
+                  <Button className="bg-primary text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Student
+                  </Button>
+                </div>
                 <StudentList students={studentsNav} onSelect={setSelectedStudent} />
               </>
             ) : (
@@ -311,75 +353,119 @@ export default function AdminDashboard() {
           </TabsContent>
           {/* Attendance Tab */}
           <TabsContent value="attendance">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Attendance Records</CardTitle>
-                  <Button variant="outline" onClick={() => handleExport('/api/export/attendance', 'attendance.xlsx')}>
-                    <Download className="w-4 h-4 mr-2" /> Export Attendance
+            {!selectedDept ? (
+              <>
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-2xl font-semibold text-slate-800">Attendance by Department</h3>
+                  <Button className="bg-primary text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Attendance
                   </Button>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {attendance.length === 0 ? (
-                    <p className="text-slate-600 text-center py-8">No attendance records found.</p>
-                  ) : (
-                    <div className="space-y-6">
-                      {Object.entries(
-                        attendance.reduce((acc, record) => {
-                          const dept = record.branch || 'Unknown Department';
-                          if (!acc[dept]) acc[dept] = {};
-                          const year = record.year || 0;
-                          if (!acc[dept][year]) acc[dept][year] = [];
-                          acc[dept][year].push(record);
-                          return acc;
-                        }, {} as Record<string, Record<number, typeof attendance>>)
-                      ).map(([dept, yearGroups]) => (
-                        <div key={dept} className="border rounded-lg p-4">
-                          <h3 className="text-lg font-semibold text-slate-800 mb-4">{dept}</h3>
-                          {Object.entries(yearGroups).map(([year, records]) => (
-                            <div key={year} className="mb-4">
-                              <h4 className="text-md font-medium text-slate-700 mb-2">Year {year}</h4>
-                              <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-slate-200">
-                                  <thead className="bg-slate-50">
-                                    <tr>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Student Name</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Roll Number</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Event</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Date</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="bg-white divide-y divide-slate-200">
-                                    {records.map((record) => (
-                                      <tr key={record.id}>
-                                        <td className="px-4 py-2 whitespace-nowrap font-medium text-slate-800">{record.studentName}</td>
-                                        <td className="px-4 py-2 whitespace-nowrap text-slate-600">{record.rollNumber}</td>
-                                        <td className="px-4 py-2 whitespace-nowrap text-slate-600">Event #{record.eventId}</td>
-                                        <td className="px-4 py-2 whitespace-nowrap text-slate-600">{new Date(record.markedAt!).toLocaleDateString()}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                <DepartmentList departments={departments} onSelect={setSelectedDept} />
+              </>
+            ) : !selectedStudentYear ? (
+              <>
+                <div className="flex justify-between items-center mb-4">
+                  <button className="px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedDept(null)}>Back</button>
+                  <Button className="bg-primary text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Attendance
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
+                <StudentYearList years={studentYears} onSelect={setSelectedStudentYear} />
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between items-center mb-4">
+                  <button className="px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedStudentYear(null)}>Back</button>
+                  <div className="space-x-2">
+                    <Button className="bg-primary text-white">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Attendance
+                    </Button>
+                    <Button variant="outline" onClick={() => handleExport('/api/export/attendance', 'attendance.xlsx')}>
+                      <Download className="w-4 h-4 mr-2" /> Export
+                    </Button>
+                  </div>
+                </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Attendance Records - {selectedDept} Year {selectedStudentYear}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {attendance.filter(a => a.branch === selectedDept && a.year === selectedStudentYear).length === 0 ? (
+                        <p className="text-slate-600 text-center py-8">No attendance records found for this department and year.</p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-slate-200">
+                            <thead className="bg-slate-50">
+                              <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student Name</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Roll Number</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Event</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-slate-200">
+                              {attendance
+                                .filter(a => a.branch === selectedDept && a.year === selectedStudentYear)
+                                .map((record) => (
+                                <tr key={record.id}>
+                                  <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-800">{record.studentName}</td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-slate-600">{record.rollNumber}</td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-slate-600">
+                                    {events.find(e => e.id === record.eventId)?.title || 'Unknown Event'}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-slate-600">
+                                    {record.markedAt ? new Date(record.markedAt).toLocaleDateString() : 'N/A'}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-slate-600">
+                                    <div className="flex space-x-2">
+                                      <Button size="sm" variant="outline">
+                                        <Edit className="w-3 h-3" />
+                                      </Button>
+                                      <Button size="sm" variant="outline" className="text-red-600 border-red-300 hover:bg-red-50">
+                                        <Trash2 className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </TabsContent>
           {/* Alumni Tab */}
           <TabsContent value="alumni">
             {!selectedAlumniYear ? (
-              <AlumniYearList years={alumniYears} onSelect={setSelectedAlumniYear} />
+              <>
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-2xl font-semibold text-slate-800">Alumni by Pass Out Year</h3>
+                  <Button className="bg-primary text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Alumni
+                  </Button>
+                </div>
+                <AlumniYearList years={alumniYears} onSelect={setSelectedAlumniYear} />
+              </>
             ) : !selectedAlumni ? (
               <>
-                <button className="mb-4 px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedAlumniYear(null)}>Back</button>
+                <div className="flex justify-between items-center mb-4">
+                  <button className="px-4 py-2 bg-slate-200 rounded" onClick={() => setSelectedAlumniYear(null)}>Back</button>
+                  <Button className="bg-primary text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Alumni
+                  </Button>
+                </div>
                 <AlumniList alumni={alumniNav} onSelect={setSelectedAlumni} />
               </>
             ) : (
