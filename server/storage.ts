@@ -131,7 +131,12 @@ export class DatabaseStorage implements IStorage {
 
   // Event methods
   async getAllEvents(): Promise<Event[]> {
-    return await db.select().from(events).orderBy(desc(events.startDate));
+    try {
+      return await db.select().from(events).orderBy(desc(events.startDate));
+    } catch (error) {
+      console.error("Database error in getAllEvents:", error);
+      throw new Error("Failed to fetch events from database");
+    }
   }
 
   async getEventById(id: number): Promise<Event | undefined> {

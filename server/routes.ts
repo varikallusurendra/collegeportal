@@ -117,12 +117,19 @@ export function registerRoutes(app: Express): Server {
       const now = new Date();
       const eventsWithStatus = events.map(event => {
         let status = "upcoming";
-        if (event.startDate <= now && event.endDate >= now) status = "ongoing";
-        else if (event.endDate < now) status = "past";
+        // Ensure dates are properly handled
+        const startDate = event.startDate ? new Date(event.startDate) : null;
+        const endDate = event.endDate ? new Date(event.endDate) : null;
+        
+        if (startDate && endDate) {
+          if (startDate <= now && now <= endDate) status = "ongoing";
+          else if (endDate < now) status = "past";
+        }
         return { ...event, status };
       });
       res.json(eventsWithStatus);
     } catch (error) {
+      console.error("Error fetching events:", error);
       res.status(500).json({ message: "Failed to fetch events" });
     }
   });
