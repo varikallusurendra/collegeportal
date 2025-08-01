@@ -295,13 +295,16 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/students", async (req, res) => {
+  app.post("/api/students", upload.fields([
+    { name: 'offerLetter', maxCount: 1 }
+  ]), async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
     try {
       const { name, rollNumber, branch, year, email, phone, selected, companyName, package: packageAmount, role } = req.body;
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
       
       // Simple validation
       if (!name || !rollNumber) {
@@ -325,6 +328,15 @@ export function registerRoutes(app: Express): Server {
       // Handle boolean field
       studentData.selected = selected === true || selected === 'true';
 
+      // Handle offer letter file upload
+      if (files.offerLetter && files.offerLetter[0]) {
+        const file = files.offerLetter[0];
+        const fileName = `offer_${Date.now()}_${file.originalname}`;
+        const filePath = path.join(uploadDir, fileName);
+        fs.writeFileSync(filePath, file.buffer);
+        studentData.offerLetterUrl = `/uploads/${fileName}`;
+      }
+
       console.log("Final student data being sent to database:", studentData);
 
       const student = await storage.createStudent(studentData);
@@ -344,12 +356,15 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/students/:id", async (req, res) => {
+  app.put("/api/students/:id", upload.fields([
+    { name: 'offerLetter', maxCount: 1 }
+  ]), async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
     try {
       const id = parseInt(req.params.id);
       const { name, rollNumber, branch, year, email, phone, selected, companyName, package: packageAmount, role } = req.body;
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
       
       console.log("Update student request body:", req.body);
       
@@ -369,6 +384,15 @@ export function registerRoutes(app: Express): Server {
       // Handle boolean field
       if (selected !== undefined) {
         studentData.selected = selected === true || selected === 'true';
+      }
+
+      // Handle offer letter file upload
+      if (files.offerLetter && files.offerLetter[0]) {
+        const file = files.offerLetter[0];
+        const fileName = `offer_${Date.now()}_${file.originalname}`;
+        const filePath = path.join(uploadDir, fileName);
+        fs.writeFileSync(filePath, file.buffer);
+        studentData.offerLetterUrl = `/uploads/${fileName}`;
       }
 
       console.log("Final student update data:", studentData);

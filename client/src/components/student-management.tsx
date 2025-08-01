@@ -26,6 +26,7 @@ type StudentForm = z.infer<typeof studentFormSchema>;
 export function StudentManagement() {
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [offerLetterFile, setOfferLetterFile] = useState<File | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -50,14 +51,24 @@ export function StudentManagement() {
   });
 
   const createStudentMutation = useMutation({
-    mutationFn: async (data: StudentForm) => {
-      // Send as JSON instead of FormData
+    mutationFn: async (data: StudentForm & { offerLetterFile?: File }) => {
+      const formData = new FormData();
+      
+      // Add all student data
+      Object.entries(data).forEach(([key, value]) => {
+        if (key !== 'offerLetterFile' && value !== undefined && value !== null) {
+          formData.append(key, value.toString());
+        }
+      });
+      
+      // Add offer letter file if provided
+      if (data.offerLetterFile) {
+        formData.append('offerLetter', data.offerLetterFile);
+      }
+      
       const response = await fetch("/api/students", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+        body: formData,
         credentials: "include",
       });
       
@@ -86,9 +97,34 @@ export function StudentManagement() {
   });
 
   const updateStudentMutation = useMutation({
-    mutationFn: async (data: StudentForm) => {
+    mutationFn: async (data: StudentForm & { offerLetterFile?: File }) => {
       if (!editingStudent) return;
-      const response = await apiRequest("PUT", `/api/students/${editingStudent.id}`, data);
+      
+      const formData = new FormData();
+      
+      // Add all student data
+      Object.entries(data).forEach(([key, value]) => {
+        if (key !== 'offerLetterFile' && value !== undefined && value !== null) {
+          formData.append(key, value.toString());
+        }
+      });
+      
+      // Add offer letter file if provided
+      if (data.offerLetterFile) {
+        formData.append('offerLetter', data.offerLetterFile);
+      }
+      
+      const response = await fetch(`/api/students/${editingStudent.id}`, {
+        method: "PUT",
+        body: formData,
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`${response.status}: ${errorText}`);
+      }
+      
       return response.json();
     },
     onSuccess: () => {
@@ -171,6 +207,7 @@ export function StudentManagement() {
   const handleCloseModal = () => {
     setShowStudentModal(false);
     setEditingStudent(null);
+    setOfferLetterFile(null);
     form.reset();
   };
 
@@ -179,6 +216,7 @@ export function StudentManagement() {
     const cleanData = {
       ...data,
       package: data.package === "" || data.package === null || data.package === undefined ? undefined : data.package,
+      offerLetterFile: offerLetterFile || undefined,
     };
     
     console.log("Form data being sent:", cleanData);
@@ -194,6 +232,24 @@ export function StudentManagement() {
       updateStudentMutation.mutate(cleanData);
     } else {
       createStudentMutation.mutate(cleanData);
+    }
+  };
+
+  const handleOfferLetterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Check file type (PDF or images)
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+      if (allowedTypes.includes(file.type)) {
+        setOfferLetterFile(file);
+      } else {
+        toast({
+          title: "Invalid file type",
+          description: "Please select a PDF, JPEG, JPG, or PNG file.",
+          variant: "destructive",
+        });
+        event.target.value = '';
+      }
     }
   };
 
@@ -272,6 +328,18 @@ export function StudentManagement() {
                                 <p className="font-medium text-green-800">{student.companyName}</p>
                                 {student.role && <p className="text-green-600">{student.role}</p>}
                                 {student.package && <p className="text-green-600">₹{student.package} LPA</p>}
+                                {student.offerLetterUrl && (
+                                  <p className="text-green-600 mt-1">
+                                    <a 
+                                      href={student.offerLetterUrl} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="underline hover:text-green-800"
+                                    >
+                                      View Offer Letter
+                                    </a>
+                                  </p>
+                                )}
                               </div>
                             )}
                             <div className="flex space-x-2 mt-3">
@@ -455,6 +523,31 @@ export function StudentManagement() {
                       placeholder="Package in LPA"
                       {...form.register("package", { valueAsNumber: true })}
                     />
+                  </div>
+                  <div>
+                    <Label htmlFor="offerLetter">Offer Letter (PDF/Image)</Label>
+                    <Input
+                      id="offerLetter"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={handleOfferLetterChange}
+                      className="cursor-pointer"
+                    />
+                    {offerLetterFile && (
+                      <p className="text-sm text-green-600 mt-1">{offerLetterFile.name}</p>
+                    )}
+                    {editingStudent?.offerLetterUrl && !offerLetterFile && (
+                      <p className="text-sm text-blue-600 mt-1">
+                        <a 
+                          href={editingStudent.offerLetterUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="underline"
+                        >
+                          Current offer letter
+                        </a>
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
