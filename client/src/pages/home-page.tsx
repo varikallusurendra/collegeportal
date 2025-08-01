@@ -31,15 +31,47 @@ export default function HomePage() {
 
   const { data: news = [] } = useQuery<News[]>({
     queryKey: ["/api/news"],
+    queryFn: async () => {
+      const response = await fetch("/api/news");
+      if (!response.ok) {
+        throw new Error("Failed to fetch news");
+      }
+      return response.json();
+    },
+    refetchOnWindowFocus: false,
+    staleTime: 0,
   });
 
-  const { data: events = [] } = useQuery<Event[]>({
+  const { data: events = [], isLoading: eventsLoading, error: eventsError } = useQuery<Event[]>({
     queryKey: ["/api/events"],
+    queryFn: async () => {
+      const response = await fetch("/api/events");
+      if (!response.ok) {
+        throw new Error("Failed to fetch events");
+      }
+      return response.json();
+    },
+    refetchOnWindowFocus: false,
+    staleTime: 0,
   });
 
   const { data: importantNotifications = [] } = useQuery<ImportantNotification[]>({
     queryKey: ["/api/important-notifications"],
+    queryFn: async () => {
+      const response = await fetch("/api/important-notifications");
+      if (!response.ok) {
+        throw new Error("Failed to fetch important notifications");
+      }
+      return response.json();
+    },
+    refetchOnWindowFocus: false,
+    staleTime: 0,
   });
+
+  // Debug logging
+  console.log("Events data:", events);
+  console.log("Events loading:", eventsLoading);
+  console.log("Events error:", eventsError);
 
   // Determine event status based on dates
   const now = new Date();
@@ -67,9 +99,27 @@ export default function HomePage() {
   };
   const { data: placementStats = defaultPlacementStats } = useQuery<PlacementStats>({
     queryKey: ["/api/placements/stats"],
+    queryFn: async () => {
+      const response = await fetch("/api/placements/stats");
+      if (!response.ok) {
+        throw new Error("Failed to fetch placement stats");
+      }
+      return response.json();
+    },
+    refetchOnWindowFocus: false,
+    staleTime: 0,
   });
   const { data: recentPlacements = [] } = useQuery<PlacementRecord[]>({
     queryKey: ["/api/placements/recent"],
+    queryFn: async () => {
+      const response = await fetch("/api/placements/recent");
+      if (!response.ok) {
+        throw new Error("Failed to fetch recent placements");
+      }
+      return response.json();
+    },
+    refetchOnWindowFocus: false,
+    staleTime: 0,
   });
 
   const handleMarkAttendance = (event: Event) => {
@@ -274,7 +324,11 @@ export default function HomePage() {
                   </TabsList>
                   
                   <TabsContent value="ongoing" className="space-y-4">
-                    {ongoingEvents.length === 0 ? (
+                    {eventsLoading ? (
+                      <p className="text-slate-600 text-center py-8">Loading events...</p>
+                    ) : eventsError ? (
+                      <p className="text-red-600 text-center py-8">Error loading events: {eventsError.message}</p>
+                    ) : ongoingEvents.length === 0 ? (
                       <p className="text-slate-600 text-center py-8">No ongoing events.</p>
                     ) : (
                       ongoingEvents.map((event) => (
@@ -325,7 +379,11 @@ export default function HomePage() {
                   </TabsContent>
                   
                   <TabsContent value="upcoming" className="space-y-4">
-                    {upcomingEvents.length === 0 ? (
+                    {eventsLoading ? (
+                      <p className="text-slate-600 text-center py-8">Loading events...</p>
+                    ) : eventsError ? (
+                      <p className="text-red-600 text-center py-8">Error loading events: {eventsError.message}</p>
+                    ) : upcomingEvents.length === 0 ? (
                       <p className="text-slate-600 text-center py-8">No upcoming events.</p>
                     ) : (
                       upcomingEvents.map((event) => (
@@ -371,7 +429,11 @@ export default function HomePage() {
                   </TabsContent>
                   
                   <TabsContent value="past" className="space-y-4">
-                    {pastEvents.length === 0 ? (
+                    {eventsLoading ? (
+                      <p className="text-slate-600 text-center py-8">Loading events...</p>
+                    ) : eventsError ? (
+                      <p className="text-red-600 text-center py-8">Error loading events: {eventsError.message}</p>
+                    ) : pastEvents.length === 0 ? (
                       <p className="text-slate-600 text-center py-8">No past events.</p>
                     ) : (
                       pastEvents.map((event) => (
