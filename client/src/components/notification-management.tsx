@@ -213,78 +213,77 @@ export function NotificationManagement() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {displayNotifications.map((notification) => (
-            <Card key={notification.id} className={notification.id < 0 ? "border-blue-200 bg-blue-50/30" : ""}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      {notification.title}
-                      {notification.id < 0 && (
-                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
-                          Default
-                        </Badge>
-                      )}
-                    </CardTitle>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge className={`${getTypeColor(notification.type)} text-white`}>
-                        {notification.type.toUpperCase()}
+          <Card key={notification.id} className={notification.id < 0 ? "border-blue-200 bg-blue-50/30" : ""}>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    {notification.title}
+                    {notification.id < 0 && (
+                      <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
+                        Default
                       </Badge>
-                      {notification.link && (
-                        <div className="flex items-center text-blue-600">
-                          <ExternalLink className="w-3 h-3 mr-1" />
-                          <span className="text-xs">Has Link</span>
-                        </div>
-                      )}
-                    </div>
+                    )}
+                  </CardTitle>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge className={`${getTypeColor(notification.type)} text-white`}>
+                      {notification.type.toUpperCase()}
+                    </Badge>
+                    {notification.link && (
+                      <div className="flex items-center text-blue-600">
+                        <ExternalLink className="w-3 h-3 mr-1" />
+                        <span className="text-xs">Has Link</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                {notification.link && (
-                  <div className="mb-4 p-2 bg-blue-50 rounded border">
-                    <p className="text-xs text-blue-700 mb-1">Link:</p>
-                    <a 
-                      href={notification.link} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:underline break-all"
+              </div>
+            </CardHeader>
+            <CardContent>
+              {notification.link && (
+                <div className="mb-4 p-2 bg-blue-50 rounded border">
+                  <p className="text-xs text-blue-700 mb-1">Link:</p>
+                  <a 
+                    href={notification.link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:underline break-all"
+                  >
+                    {notification.link}
+                  </a>
+                </div>
+              )}
+              <p className="text-xs text-slate-500 mb-4">
+                Created: {new Date(notification.createdAt!).toLocaleString()}
+              </p>
+              <div className="flex space-x-2">
+                {notification.id > 0 ? (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEditNotification(notification)}
                     >
-                      {notification.link}
-                    </a>
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 border-red-300 hover:bg-red-50"
+                      onClick={() => handleDeleteNotification(notification.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </>
+                ) : (
+                  <div className="text-xs text-slate-500 italic">
+                    Default notification - create custom notifications to replace
                   </div>
                 )}
-                <p className="text-xs text-slate-500 mb-4">
-                  Created: {new Date(notification.createdAt!).toLocaleString()}
-                </p>
-                <div className="flex space-x-2">
-                  {notification.id > 0 ? (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEditNotification(notification)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 border-red-300 hover:bg-red-50"
-                        onClick={() => handleDeleteNotification(notification.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </>
-                  ) : (
-                    <div className="text-xs text-slate-500 italic">
-                      Default notification - create custom notifications to replace
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <Dialog open={showNotificationModal} onOpenChange={handleCloseModal}>
