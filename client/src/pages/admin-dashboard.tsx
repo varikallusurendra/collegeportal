@@ -79,11 +79,11 @@ export default function AdminDashboard() {
         // Extract departments from existing students data (filter out null/undefined)
         const depts = Array.from(new Set(students.map(s => s.branch).filter((branch): branch is string => Boolean(branch)))).sort();
         setDepartments(depts);
-        
+
         // Extract companies from existing events data (filter out null/undefined)
         const comps = Array.from(new Set(events.map(e => e.company).filter((company): company is string => Boolean(company)))).sort();
         setCompanies(comps);
-        
+
         // Extract unique alumni pass out years
         const years = Array.from(new Set(alumni.map(a => a.passOutYear))).sort((a, b) => b - a);
         setAlumniYears(years);
@@ -91,7 +91,7 @@ export default function AdminDashboard() {
         console.error('Error loading data:', error);
       }
     };
-    
+
     if (students.length > 0 || events.length > 0 || alumni.length > 0) {
       loadData();
     }
@@ -156,9 +156,34 @@ export default function AdminDashboard() {
     }
   }, [selectedDept, selectedStudentYear]);
 
-  // Remove duplicate useEffect - already handled above
+  // Fetch companies and years when events change
+  useEffect(() => {
+    if (events.length > 0) {
+      const companies = Array.from(new Set(events.map(event => event.company)));
+      const years = Array.from(new Set(events.map(event => 
+        new Date(event.startDate!).getFullYear()
+      ))).sort((a, b) => b - a);
 
-  // Remove duplicate useEffect - already handled above
+      setCompanies(companies);
+      setEventYears(years);
+    }
+  }, [events.length]);
+
+  // Fetch students years
+  useEffect(() => {
+    if (students.length > 0) {
+      const years = Array.from(new Set(students.map(student => student.year))).sort((a, b) => b - a);
+      setStudentYears(years);
+    }
+  }, [students.length]);
+
+  // Fetch alumni years
+  useEffect(() => {
+    if (alumni.length > 0) {
+      const years = Array.from(new Set(alumni.map(a => a.passOutYear))).sort((a, b) => b - a);
+      setAlumniYears(years);
+    }
+  }, [alumni.length]);
 
   const handleLogout = async () => {
     try {
@@ -393,7 +418,7 @@ export default function AdminDashboard() {
                   Manage Students (CRUD)
                 </Button>
               </div>
-              
+
               {!selectedDept ? (
                 <Card>
                   <CardHeader>

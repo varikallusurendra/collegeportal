@@ -51,7 +51,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/news", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       const validatedData = insertNewsSchema.parse(req.body);
       const newsItem = await storage.createNews(validatedData);
@@ -95,15 +95,15 @@ export function registerRoutes(app: Express): Server {
 
   app.delete("/api/news/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteNews(id);
-      
+
       if (!success) {
         return res.status(404).json({ message: "News not found" });
       }
-      
+
       res.sendStatus(204);
     } catch (error) {
       res.status(500).json({ message: "Failed to delete news" });
@@ -120,7 +120,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/students/create", async (req, res) => {
     console.log("=== SIMPLE STUDENT CREATE ===");
     console.log("Request body:", req.body);
-    
+
     try {
       const student = await storage.createStudent({
         name: "Test Student",
@@ -143,7 +143,7 @@ export function registerRoutes(app: Express): Server {
         // Ensure dates are properly handled
         const startDate = event.startDate ? new Date(event.startDate) : null;
         const endDate = event.endDate ? new Date(event.endDate) : null;
-        
+
         if (startDate && endDate) {
           if (startDate <= now && now <= endDate) status = "ongoing";
           else if (endDate < now) status = "past";
@@ -234,15 +234,15 @@ export function registerRoutes(app: Express): Server {
 
   app.delete("/api/events/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteEvent(id);
-      
+
       if (!success) {
         return res.status(404).json({ message: "Event not found" });
       }
-      
+
       res.sendStatus(204);
     } catch (error) {
       res.status(500).json({ message: "Failed to delete event" });
@@ -252,7 +252,7 @@ export function registerRoutes(app: Express): Server {
   // Student routes
   app.get("/api/students", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       const students = await storage.getAllStudents();
       res.json(students);
@@ -272,22 +272,22 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/students/simple", async (req, res) => {
     console.log("=== SIMPLE STUDENT ROUTE ===");
     console.log("Request body:", req.body);
-    
+
     if (!req.isAuthenticated()) {
       console.log("Authentication failed");
       return res.sendStatus(401);
     }
-    
+
     console.log("Authentication passed");
-    
+
     try {
       const studentData = { ...req.body };
       console.log("Student data:", studentData);
-      
+
       // Test database connection
       const allStudents = await storage.getAllStudents();
       console.log("Database connection test - Current students count:", allStudents.length);
-      
+
       res.json({ message: "Simple route working", data: studentData });
     } catch (error) {
       console.error("Simple route error:", error);
@@ -305,7 +305,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const { name, rollNumber, branch, year, email, phone, selected, companyName, package: packageAmount, role } = req.body;
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      
+
       // Simple validation
       if (!name || !rollNumber) {
         return res.status(400).json({ message: "Name and roll number are required" });
@@ -324,7 +324,7 @@ export function registerRoutes(app: Express): Server {
       if (companyName) studentData.companyName = companyName;
       if (packageAmount) studentData.package = parseInt(packageAmount);
       if (role) studentData.role = role;
-      
+
       // Handle boolean field
       studentData.selected = selected === true || selected === 'true';
 
@@ -347,7 +347,7 @@ export function registerRoutes(app: Express): Server {
       console.error("Error code:", error.code);
       console.error("Error detail:", error.detail);
       console.error("Full error:", error);
-      
+
       if (error.message === "Roll number already exists") {
         res.status(400).json({ message: "Roll number already exists" });
       } else {
@@ -357,17 +357,19 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.put("/api/students/:id", upload.fields([
+    { name: 'photo', maxCount: 1 },
     { name: 'offerLetter', maxCount: 1 }
   ]), async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       const id = parseInt(req.params.id);
-      const { name, rollNumber, branch, year, email, phone, selected, companyName, package: packageAmount, role } = req.body;
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      
+      const { name, rollNumber, branch, year, email, phone, selected, companyName, package: packageAmount, role } = req.body;
+
       console.log("Update student request body:", req.body);
-      
+      console.log("Update student files:", files);
+
       const studentData: any = {};
 
       // Only add fields that are provided
@@ -380,19 +382,18 @@ export function registerRoutes(app: Express): Server {
       if (companyName !== undefined) studentData.companyName = companyName;
       if (packageAmount !== undefined && packageAmount !== "") studentData.package = parseInt(packageAmount);
       if (role !== undefined) studentData.role = role;
-      
+
       // Handle boolean field
       if (selected !== undefined) {
         studentData.selected = selected === true || selected === 'true';
       }
 
-      // Handle offer letter file upload
-      if (files.offerLetter && files.offerLetter[0]) {
-        const file = files.offerLetter[0];
-        const fileName = `offer_${Date.now()}_${file.originalname}`;
-        const filePath = path.join(uploadDir, fileName);
-        fs.writeFileSync(filePath, file.buffer);
-        studentData.offerLetterUrl = `/uploads/${fileName}`;
+      // Handle file uploads
+      if (files?.photo && files.photo[0]) {
+        studentData.photoUrl = `/uploads/${files.photo[0].filename}`;
+      }
+      if (files?.offerLetter && files.offerLetter[0]) {
+        studentData.offerLetterUrl = `/uploads/${files.offerLetter[0].filename}`;
       }
 
       console.log("Final student update data:", studentData);
@@ -414,15 +415,15 @@ export function registerRoutes(app: Express): Server {
 
   app.delete("/api/students/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteStudent(id);
-      
+
       if (!success) {
         return res.status(404).json({ message: "Student not found" });
       }
-      
+
       res.sendStatus(204);
     } catch (error) {
       res.status(500).json({ message: "Failed to delete student" });
@@ -432,7 +433,7 @@ export function registerRoutes(app: Express): Server {
   // Alumni routes
   app.get("/api/alumni", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       const alumni = await storage.getAllAlumni();
       res.json(alumni);
@@ -487,15 +488,15 @@ export function registerRoutes(app: Express): Server {
 
   app.delete("/api/alumni/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteAlumni(id);
-      
+
       if (!success) {
         return res.status(404).json({ message: "Alumni not found" });
       }
-      
+
       res.sendStatus(204);
     } catch (error) {
       res.status(500).json({ message: "Failed to delete alumni" });
@@ -525,7 +526,7 @@ export function registerRoutes(app: Express): Server {
   // Attendance routes
   app.get("/api/attendance", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       const attendanceRecords = await storage.getAllAttendance();
       res.json(attendanceRecords);
@@ -682,7 +683,7 @@ export function registerRoutes(app: Express): Server {
   // Export routes
   app.get("/api/export/students", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       const students = await storage.getAllStudents();
       // Exclude createdAt and updatedAt fields
@@ -690,9 +691,9 @@ export function registerRoutes(app: Express): Server {
       const worksheet = XLSX.utils.json_to_sheet(exportStudents);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
-      
+
       const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-      
+
       res.setHeader('Content-Disposition', 'attachment; filename="students.xlsx"');
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.send(buffer);
@@ -703,15 +704,15 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/export/alumni", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       const alumni = await storage.getAllAlumni();
       const worksheet = XLSX.utils.json_to_sheet(alumni);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Alumni");
-      
+
       const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-      
+
       res.setHeader('Content-Disposition', 'attachment; filename="alumni.xlsx"');
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.send(buffer);
@@ -722,15 +723,15 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/export/attendance", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       const attendance = await storage.getAllAttendance();
       const worksheet = XLSX.utils.json_to_sheet(attendance);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance");
-      
+
       const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-      
+
       res.setHeader('Content-Disposition', 'attachment; filename="attendance.xlsx"');
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.send(buffer);
@@ -742,7 +743,7 @@ export function registerRoutes(app: Express): Server {
   // Import routes
   app.post("/api/import/students", upload.single('file'), async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       if (!req.file) {
         return res.status(400).json({ success: false, message: "No file uploaded", imported: 0, errors: [] });
@@ -809,7 +810,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/import/events", upload.single('file'), async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       if (!req.file) {
         return res.status(400).json({ success: false, message: "No file uploaded", imported: 0, errors: [] });
@@ -871,7 +872,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/import/alumni", upload.single('file'), async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       if (!req.file) {
         return res.status(400).json({ success: false, message: "No file uploaded", imported: 0, errors: [] });
@@ -934,7 +935,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/import/attendance", upload.single('file'), async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       if (!req.file) {
         return res.status(400).json({ success: false, message: "No file uploaded", imported: 0, errors: [] });

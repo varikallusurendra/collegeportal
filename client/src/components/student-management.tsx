@@ -51,32 +51,18 @@ export function StudentManagement() {
   });
 
   const createStudentMutation = useMutation({
-    mutationFn: async (data: StudentForm & { offerLetterFile?: File }) => {
-      const formData = new FormData();
-      
-      // Add all student data
-      Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'offerLetterFile' && value !== undefined && value !== null) {
-          formData.append(key, value.toString());
-        }
-      });
-      
-      // Add offer letter file if provided
-      if (data.offerLetterFile) {
-        formData.append('offerLetter', data.offerLetterFile);
-      }
-      
+    mutationFn: async (formData: FormData) => {
       const response = await fetch("/api/students", {
         method: "POST",
-        body: formData,
         credentials: "include",
+        body: formData,
       });
-      
+
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`${response.status}: ${errorText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to create student");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -97,34 +83,20 @@ export function StudentManagement() {
   });
 
   const updateStudentMutation = useMutation({
-    mutationFn: async (data: StudentForm & { offerLetterFile?: File }) => {
+    mutationFn: async (formData: FormData) => {
       if (!editingStudent) return;
-      
-      const formData = new FormData();
-      
-      // Add all student data
-      Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'offerLetterFile' && value !== undefined && value !== null) {
-          formData.append(key, value.toString());
-        }
-      });
-      
-      // Add offer letter file if provided
-      if (data.offerLetterFile) {
-        formData.append('offerLetter', data.offerLetterFile);
-      }
-      
+
       const response = await fetch(`/api/students/${editingStudent.id}`, {
         method: "PUT",
-        body: formData,
         credentials: "include",
+        body: formData,
       });
-      
+
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`${response.status}: ${errorText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update student");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -211,27 +183,32 @@ export function StudentManagement() {
     form.reset();
   };
 
-  const onSubmit = (data: StudentForm) => {
-    // Clean the data before sending
-    const cleanData = {
-      ...data,
-      package: data.package === "" || data.package === null || data.package === undefined ? undefined : data.package,
-      offerLetterFile: offerLetterFile || undefined,
-    };
-    
-    console.log("Form data being sent:", cleanData);
+  const onSubmit = async (data: StudentForm) => {
+    console.log("Form data being sent:", data);
     console.log("Form validation errors:", form.formState.errors);
-    
-    // Check if required fields are present
-    if (!cleanData.name || !cleanData.rollNumber) {
-      console.error("Missing required fields:", { name: cleanData.name, rollNumber: cleanData.rollNumber });
-      return;
-    }
-    
-    if (editingStudent) {
-      updateStudentMutation.mutate(cleanData);
-    } else {
-      createStudentMutation.mutate(cleanData);
+
+    try {
+      const formData = new FormData();
+
+      // Add text fields
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          formData.append(key, value.toString());
+        }
+      });
+
+      // Add files if present
+      if (offerLetterFile) {
+        formData.append('offerLetter', offerLetterFile);
+      }
+
+      if (editingStudent) {
+        await updateStudentMutation.mutateAsync(formData as any);
+      } else {
+        await createStudentMutation.mutateAsync(formData as any);
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
     }
   };
 
@@ -498,59 +475,63 @@ export function StudentManagement() {
               </div>
 
               {form.watch("selected") && (
-                <div className="space-y-3 pl-6 border-l-2 border-green-200">
-                  <div>
-                    <Label htmlFor="companyName">Company Name</Label>
-                    <Input
-                      id="companyName"
-                      placeholder="Company name"
-                      {...form.register("companyName")}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="role">Job Role</Label>
-                    <Input
-                      id="role"
-                      placeholder="Job role"
-                      {...form.register("role")}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="package">Package (LPA)</Label>
-                    <Input
-                      id="package"
-                      type="number"
-                      placeholder="Package in LPA"
-                      {...form.register("package", { valueAsNumber: true })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="offerLetter">Offer Letter (PDF/Image)</Label>
-                    <Input
-                      id="offerLetter"
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={handleOfferLetterChange}
-                      className="cursor-pointer"
-                    />
-                    {offerLetterFile && (
-                      <p className="text-sm text-green-600 mt-1">{offerLetterFile.name}</p>
-                    )}
-                    {editingStudent?.offerLetterUrl && !offerLetterFile && (
-                      <p className="text-sm text-blue-600 mt-1">
-                        <a 
-                          href={editingStudent.offerLetterUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="underline"
-                        >
-                          Current offer letter
-                        </a>
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
+                    <>
+                      <div>
+                        <Label htmlFor="companyName">Company Name</Label>
+                        <Input
+                          id="companyName"
+                          placeholder="Company name"
+                          {...form.register("companyName")}
+                        />
+                        {form.formState.errors.companyName && (
+                          <p className="text-sm text-red-500 mt-1">
+                            {form.formState.errors.companyName.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="package">Package (LPA)</Label>
+                          <Input
+                            id="package"
+                            type="number"
+                            placeholder="Package amount"
+                            {...form.register("package", { valueAsNumber: true })}
+                          />
+                          {form.formState.errors.package && (
+                            <p className="text-sm text-red-500 mt-1">
+                              {form.formState.errors.package.message}
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <Label htmlFor="role">Role</Label>
+                          <Input
+                            id="role"
+                            placeholder="Job role"
+                            {...form.register("role")}
+                          />
+                          {form.formState.errors.role && (
+                            <p className="text-sm text-red-500 mt-1">
+                              {form.formState.errors.role.message}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="offerLetter">Offer Letter (PDF/Image)</Label>
+                        <Input
+                          id="offerLetter"
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) => setOfferLetterFile(e.target.files?.[0] || null)}
+                        />
+                        <p className="text-xs text-slate-500 mt-1">Upload offer letter (PDF or image format)</p>
+                      </div>
+                    </>
+                  )}
             </div>
 
             <div className="flex space-x-2">
