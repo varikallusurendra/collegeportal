@@ -120,8 +120,13 @@ export const insertNewsSchema = createInsertSchema(news).omit({
 export const insertEventSchema = createInsertSchema(events, {
   startDate: z.union([z.string(), z.date()]).transform((val) => new Date(val)),
   endDate: z.union([z.string(), z.date()]).transform((val) => new Date(val)),
-  notificationLink: z.string().optional(),
-  attachmentUrl: z.string().optional(),
+}).extend({
+  notificationLink: z.string().url().optional().or(z.literal("")),
+  attachmentUrl: z.string().url().optional().or(z.literal("")),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertStudentSchema = createInsertSchema(students).omit({
