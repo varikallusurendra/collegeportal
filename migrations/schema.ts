@@ -71,6 +71,8 @@ export const events = pgTable("events", {
 	startDate: timestamp("start_date", { mode: 'string' }).notNull(),
 	endDate: timestamp("end_date", { mode: 'string' }).notNull(),
 	link: text(),
+	notificationLink: text("notification_link"),
+	attachmentUrl: text("attachment_url"),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
 });

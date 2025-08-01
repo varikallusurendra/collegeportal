@@ -117,10 +117,11 @@ export const insertNewsSchema = createInsertSchema(news).omit({
   updatedAt: true,
 });
 
-export const insertEventSchema = createInsertSchema(events).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertEventSchema = createInsertSchema(events, {
+  startDate: z.union([z.string(), z.date()]).transform((val) => new Date(val)),
+  endDate: z.union([z.string(), z.date()]).transform((val) => new Date(val)),
+  notificationLink: z.string().optional(),
+  attachmentUrl: z.string().optional(),
 });
 
 export const insertStudentSchema = createInsertSchema(students).omit({

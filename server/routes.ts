@@ -137,7 +137,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/events", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     try {
-      const allowedFields = ["title", "description", "company", "startDate", "endDate"];
+      const allowedFields = ["title", "description", "company", "startDate", "endDate", "notificationLink", "attachmentUrl"];
       const eventData: Record<string, any> = {};
       for (const key of allowedFields) {
         if (req.body[key] !== undefined && req.body[key] !== null) {
@@ -172,7 +172,7 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     try {
       const id = parseInt(req.params.id);
-      const allowedFields = ["title", "description", "company", "startDate", "endDate"];
+      const allowedFields = ["title", "description", "company", "startDate", "endDate", "notificationLink", "attachmentUrl"];
       const updateData: Record<string, any> = {};
       for (const key of allowedFields) {
         if (req.body[key] !== undefined && req.body[key] !== null) {
