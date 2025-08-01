@@ -353,11 +353,14 @@ export function StudentManagement() {
                         <SelectValue placeholder="Select branch" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Computer Science">Computer Science</SelectItem>
-                        <SelectItem value="Electronics">Electronics</SelectItem>
-                        <SelectItem value="Mechanical">Mechanical</SelectItem>
+                        <SelectItem value="CSE">CSE</SelectItem>
+                        <SelectItem value="CSE AIML">CSE AIML</SelectItem>
+                        <SelectItem value="CSE DS">CSE DS</SelectItem>
+                        <SelectItem value="CSE IT">CSE IT</SelectItem>
+                        <SelectItem value="ECE">ECE</SelectItem>
                         <SelectItem value="Civil">Civil</SelectItem>
-                        <SelectItem value="Electrical">Electrical</SelectItem>
+                        <SelectItem value="Mech">Mech</SelectItem>
+                        <SelectItem value="EEE">EEE</SelectItem>
                       </SelectContent>
                     </Select>
                   )}

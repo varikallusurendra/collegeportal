@@ -344,41 +344,46 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/students/:id", upload.fields([
-    { name: 'photo', maxCount: 1 },
-    { name: 'offerLetter', maxCount: 1 }
-  ]), async (req, res) => {
+  app.put("/api/students/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
+    
     try {
       const id = parseInt(req.params.id);
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      const allowedFields = [
-        "name", "rollNumber", "branch", "email", "phone", "photoUrl", "selected", "companyName", "offerLetterUrl"
-      ];
-      const studentData: Record<string, any> = {};
-      for (const key of allowedFields) {
-        if (req.body[key] !== undefined && req.body[key] !== null) {
-          studentData[key] = req.body[key];
-        }
+      const { name, rollNumber, branch, year, email, phone, selected, companyName, package: packageAmount, role } = req.body;
+      
+      console.log("Update student request body:", req.body);
+      
+      const studentData: any = {};
+
+      // Only add fields that are provided
+      if (name !== undefined) studentData.name = name;
+      if (rollNumber !== undefined) studentData.rollNumber = rollNumber;
+      if (branch !== undefined) studentData.branch = branch;
+      if (year !== undefined) studentData.year = parseInt(year);
+      if (email !== undefined) studentData.email = email;
+      if (phone !== undefined) studentData.phone = phone;
+      if (companyName !== undefined) studentData.companyName = companyName;
+      if (packageAmount !== undefined && packageAmount !== "") studentData.package = parseInt(packageAmount);
+      if (role !== undefined) studentData.role = role;
+      
+      // Handle boolean field
+      if (selected !== undefined) {
+        studentData.selected = selected === true || selected === 'true';
       }
-      if (files.photo) {
-        studentData.photoUrl = `/uploads/${files.photo[0].filename}`;
-      }
-      if (files.offerLetter) {
-        studentData.offerLetterUrl = `/uploads/${files.offerLetter[0].filename}`;
-      }
-      const validatedData = insertStudentSchema.partial().parse(studentData);
-      const updatedStudent = await storage.updateStudent(id, validatedData);
+
+      console.log("Final student update data:", studentData);
+
+      const updatedStudent = await storage.updateStudent(id, studentData);
       if (!updatedStudent) {
         return res.status(404).json({ message: "Student not found" });
       }
       res.json(updatedStudent);
     } catch (error: any) {
-      if (error && error.errors) {
-        console.error("Zod validation error (student):", error.errors);
-        res.status(400).json({ message: "Invalid student data", details: error.errors });
+      console.error("Student update error:", error);
+      if (error.message === "Roll number already exists") {
+        res.status(400).json({ message: "Roll number already exists" });
       } else {
-        res.status(400).json({ message: "Invalid student data" });
+        res.status(400).json({ message: "Failed to update student", error: error.message });
       }
     }
   });
