@@ -140,7 +140,7 @@ export function registerRoutes(app: Express): Server {
       const allowedFields = ["title", "description", "company", "startDate", "endDate", "notificationLink", "attachmentUrl"];
       const eventData: Record<string, any> = {};
       for (const key of allowedFields) {
-        if (req.body[key] !== undefined && req.body[key] !== null) {
+        if (req.body[key] !== undefined && req.body[key] !== null && req.body[key] !== "") {
           eventData[key] = req.body[key];
         }
       }
@@ -150,7 +150,9 @@ export function registerRoutes(app: Express): Server {
       if (eventData.endDate && typeof eventData.endDate === "string") {
         eventData.endDate = new Date(eventData.endDate);
       }
+      console.log("Event data before validation:", eventData);
       const validatedData = insertEventSchema.parse(eventData);
+      console.log("Event data after validation:", validatedData);
       const event = await storage.createEvent(validatedData);
       // Compute status
       const now = new Date();
@@ -163,6 +165,7 @@ export function registerRoutes(app: Express): Server {
         console.error("Zod validation error (event):", error.errors);
         res.status(400).json({ message: "Invalid event data", details: error.errors });
       } else {
+        console.error("Event creation error:", error);
         res.status(400).json({ message: "Invalid event data" });
       }
     }

@@ -121,8 +121,8 @@ export const insertEventSchema = createInsertSchema(events, {
   startDate: z.union([z.string(), z.date()]).transform((val) => new Date(val)),
   endDate: z.union([z.string(), z.date()]).transform((val) => new Date(val)),
 }).extend({
-  notificationLink: z.string().url().optional().or(z.literal("")),
-  attachmentUrl: z.string().url().optional().or(z.literal("")),
+  notificationLink: z.string().optional().transform(val => val === "" ? undefined : val),
+  attachmentUrl: z.string().optional().transform(val => val === "" ? undefined : val),
 }).omit({
   id: true,
   createdAt: true,
