@@ -215,14 +215,14 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-16">
+      <section className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6 drop-shadow-lg" style={{textShadow: '0 2px 8px rgba(0,0,0,0.18)'}}>KITS Akshar Institute of Technology</h1>
-            <p className="text-xl text-blue-100 mb-4 max-w-3xl mx-auto drop-shadow" style={{textShadow: '0 2px 8px rgba(0,0,0,0.18)'}}>
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-white drop-shadow-lg" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.5)'}}>KITS Akshar Institute of Technology</h1>
+            <p className="text-xl text-white mb-4 max-w-3xl mx-auto drop-shadow" style={{textShadow: '1px 1px 3px rgba(0,0,0,0.5)'}}>
               T&P CELL Portal
             </p>
-            <p className="text-lg text-blue-200 mb-8 max-w-3xl mx-auto drop-shadow" style={{textShadow: '0 2px 8px rgba(0,0,0,0.18)'}}>
+            <p className="text-lg text-gray-100 mb-8 max-w-3xl mx-auto drop-shadow" style={{textShadow: '1px 1px 3px rgba(0,0,0,0.5)'}}>
               Empowering students with industry connections and career opportunities | Autonomous | AICTE Approved | Affiliated to JNTUK
             </p>
           </div>
