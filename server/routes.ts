@@ -301,7 +301,7 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      const { name, rollNumber, branch, year, email, phone, selected, companyName, package, role } = req.body;
+      const { name, rollNumber, branch, year, email, phone, selected, companyName, package: packageAmount, role } = req.body;
       
       // Simple validation
       if (!name || !rollNumber) {
@@ -319,7 +319,7 @@ export function registerRoutes(app: Express): Server {
       if (email) studentData.email = email;
       if (phone) studentData.phone = phone;
       if (companyName) studentData.companyName = companyName;
-      if (package) studentData.package = parseInt(package);
+      if (packageAmount) studentData.package = parseInt(packageAmount);
       if (role) studentData.role = role;
       
       // Handle boolean field
