@@ -73,33 +73,33 @@ export default function AdminDashboard() {
 
   // Load departments, companies, and alumni years on mount with optimized queries
   useEffect(() => {
-    // Use direct API calls instead of slow fetchDepartments function
-    const loadData = async () => {
-      try {
-        // Extract departments from existing students data (filter out null/undefined)
-        const depts = Array.from(new Set(students.map(s => s.branch).filter((branch): branch is string => Boolean(branch)))).sort();
-        setDepartments(depts);
-
-        // Extract companies from existing events data (filter out null/undefined)
-        const comps = Array.from(new Set(events.map(e => e.company).filter((company): company is string => Boolean(company)))).sort();
-        setCompanies(comps);
-
-        // Extract unique alumni pass out years
-        const years = Array.from(new Set(alumni.map(a => a.passOutYear))).sort((a, b) => b - a);
-        setAlumniYears(years);
-      } catch (error) {
-        console.error('Error loading data:', error);
-      }
-    };
-
-    if (students.length > 0 || events.length > 0 || alumni.length > 0) {
-      loadData();
+    if (students.length >= 0) {
+      // Extract departments from existing students data (filter out null/undefined)
+      const depts = Array.from(new Set(students.map(s => s.branch).filter((branch): branch is string => Boolean(branch)))).sort();
+      setDepartments(depts);
     }
-  }, [students, events, alumni]);
+  }, [students]);
 
-  // Load years when department/company is selected - optimized
   useEffect(() => {
-    if (selectedDept) {
+    if (events.length >= 0) {
+      // Extract companies from existing events data (filter out null/undefined)
+      const comps = Array.from(new Set(events.map(e => e.company).filter((company): company is string => Boolean(company)))).sort();
+      setCompanies(comps);
+    }
+  }, [events]);
+
+  useEffect(() => {
+    if (alumni.length >= 0) {
+      // Extract unique alumni pass out years
+      const years = Array.from(new Set(alumni.map(a => a.passOutYear))).sort((a, b) => b - a);
+      setAlumniYears(years);
+      console.log("Alumni years loaded:", years, "from alumni:", alumni.length);
+    }
+  }, [alumni]);
+
+  // Load years when department is selected - optimized
+  useEffect(() => {
+    if (selectedDept && students.length > 0) {
       // Use existing students data instead of API call (filter out null/undefined)
       const years = Array.from(new Set(
         students.filter(s => s.branch === selectedDept).map(s => s.year).filter((year): year is number => Boolean(year))
@@ -112,7 +112,7 @@ export default function AdminDashboard() {
   }, [selectedDept, students]);
 
   useEffect(() => {
-    if (selectedCompany) {
+    if (selectedCompany && events.length > 0) {
       // Use existing events data instead of API call - extract year from startDate
       const years = Array.from(new Set(
         events.filter(e => e.company === selectedCompany).map(e => new Date(e.startDate).getFullYear()).filter(Boolean)
@@ -124,9 +124,9 @@ export default function AdminDashboard() {
     }
   }, [selectedCompany, events]);
 
-  // Load students/events when year is selected - optimized
+  // Load students when year is selected - optimized
   useEffect(() => {
-    if (selectedDept && selectedStudentYear !== null) {
+    if (selectedDept && selectedStudentYear !== null && students.length > 0) {
       // Use existing students data instead of API call
       const filteredStudents = students.filter(
         s => s.branch === selectedDept && s.year === selectedStudentYear
@@ -136,7 +136,7 @@ export default function AdminDashboard() {
   }, [selectedDept, selectedStudentYear, students]);
 
   useEffect(() => {
-    if (selectedCompany && selectedEventYear !== null) {
+    if (selectedCompany && selectedEventYear !== null && events.length > 0) {
       // Use existing events data instead of API call
       const filteredEvents = events.filter(
         e => e.company === selectedCompany && new Date(e.startDate).getFullYear() === selectedEventYear
@@ -152,38 +152,11 @@ export default function AdminDashboard() {
         a => a.passOutYear === selectedAlumniYear
       );
       setAlumniNav(filteredAlumni);
-      setSelectedStudent(null);
+      setSelectedAlumni(null);
     }
-  }, [selectedDept, selectedStudentYear]);
+  }, [selectedAlumniYear, alumni]);
 
-  // Fetch companies and years when events change
-  useEffect(() => {
-    if (events.length > 0) {
-      const companies = Array.from(new Set(events.map(event => event.company)));
-      const years = Array.from(new Set(events.map(event => 
-        new Date(event.startDate!).getFullYear()
-      ))).sort((a, b) => b - a);
-
-      setCompanies(companies);
-      setEventYears(years);
-    }
-  }, [events.length]);
-
-  // Fetch students years
-  useEffect(() => {
-    if (students.length > 0) {
-      const years = Array.from(new Set(students.map(student => student.year))).sort((a, b) => b - a);
-      setStudentYears(years);
-    }
-  }, [students.length]);
-
-  // Fetch alumni years
-  useEffect(() => {
-    if (alumni.length > 0) {
-      const years = Array.from(new Set(alumni.map(a => a.passOutYear))).sort((a, b) => b - a);
-      setAlumniYears(years);
-    }
-  }, [alumni.length]);
+  
 
   const handleLogout = async () => {
     try {
