@@ -110,6 +110,29 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Test route to verify routing works
+  app.post("/api/test", async (req, res) => {
+    console.log("=== BASIC TEST ROUTE ===");
+    res.json({ message: "Basic test route working" });
+  });
+
+  // Test student creation without any middleware
+  app.post("/api/students/create", async (req, res) => {
+    console.log("=== SIMPLE STUDENT CREATE ===");
+    console.log("Request body:", req.body);
+    
+    try {
+      const student = await storage.createStudent({
+        name: "Test Student",
+        rollNumber: "TEST123",
+      });
+      res.json({ message: "Test student created", student });
+    } catch (error) {
+      console.error("Test student creation error:", error);
+      res.status(500).json({ message: "Test failed", error: error.message });
+    }
+  });
+
   // Event routes
   app.get("/api/events", async (req, res) => {
     try {
@@ -238,33 +261,85 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/students", upload.fields([
-    { name: 'photo', maxCount: 1 },
-    { name: 'offerLetter', maxCount: 1 }
-  ]), async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  // Test route without file upload
+  app.post("/api/students/test", async (req, res) => {
+    console.log("=== TEST ROUTE ===");
+    console.log("Test route body:", req.body);
+    res.json({ message: "Test route working", body: req.body });
+  });
+
+  // Test route with authentication but no file upload
+  app.post("/api/students/simple", async (req, res) => {
+    console.log("=== SIMPLE STUDENT ROUTE ===");
+    console.log("Request body:", req.body);
+    
+    if (!req.isAuthenticated()) {
+      console.log("Authentication failed");
+      return res.sendStatus(401);
+    }
+    
+    console.log("Authentication passed");
     
     try {
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
       const studentData = { ...req.body };
+      console.log("Student data:", studentData);
       
-      if (files.photo) {
-        studentData.photoUrl = `/uploads/${files.photo[0].filename}`;
+      // Test database connection
+      const allStudents = await storage.getAllStudents();
+      console.log("Database connection test - Current students count:", allStudents.length);
+      
+      res.json({ message: "Simple route working", data: studentData });
+    } catch (error) {
+      console.error("Simple route error:", error);
+      res.status(500).json({ message: "Simple route error", error: error.message });
+    }
+  });
+
+  app.post("/api/students", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { name, rollNumber, branch, year, email, phone, selected, companyName, package, role } = req.body;
+      
+      // Simple validation
+      if (!name || !rollNumber) {
+        return res.status(400).json({ message: "Name and roll number are required" });
       }
+
+      const studentData: any = {
+        name,
+        rollNumber,
+      };
+
+      // Only add optional fields if they have values
+      if (branch) studentData.branch = branch;
+      if (year) studentData.year = parseInt(year);
+      if (email) studentData.email = email;
+      if (phone) studentData.phone = phone;
+      if (companyName) studentData.companyName = companyName;
+      if (package) studentData.package = parseInt(package);
+      if (role) studentData.role = role;
       
-      if (files.offerLetter) {
-        studentData.offerLetterUrl = `/uploads/${files.offerLetter[0].filename}`;
-      }
-      
-      const validatedData = insertStudentSchema.parse(studentData);
-      const student = await storage.createStudent(validatedData);
+      // Handle boolean field
+      studentData.selected = selected === true || selected === 'true';
+
+      console.log("Final student data being sent to database:", studentData);
+
+      const student = await storage.createStudent(studentData);
       res.status(201).json(student);
     } catch (error: any) {
-      if (error && error.errors) {
-        console.error("Zod validation error (student):", error.errors);
-        res.status(400).json({ message: "Invalid student data", details: error.errors });
+      console.error("Student creation error:", error);
+      console.error("Error message:", error.message);
+      console.error("Error code:", error.code);
+      console.error("Error detail:", error.detail);
+      console.error("Full error:", error);
+      
+      if (error.message === "Roll number already exists") {
+        res.status(400).json({ message: "Roll number already exists" });
       } else {
-        res.status(400).json({ message: "Invalid student data" });
+        res.status(400).json({ message: "Failed to create student", error: error.message });
       }
     }
   });

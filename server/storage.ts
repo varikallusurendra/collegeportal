@@ -182,11 +182,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createStudent(insertStudent: InsertStudent): Promise<Student> {
-    const [student] = await db
-      .insert(students)
-      .values(insertStudent)
-      .returning();
-    return student;
+    try {
+      console.log("=== STORAGE CREATE STUDENT ===");
+      console.log("Input data:", insertStudent);
+      
+      const [student] = await db
+        .insert(students)
+        .values(insertStudent)
+        .returning();
+      
+      console.log("Created student:", student);
+      return student;
+    } catch (error: any) {
+      console.error("=== DATABASE ERROR ===");
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+      console.error("Error detail:", error.detail);
+      console.error("Error constraint:", error.constraint);
+      console.error("Full error:", error);
+      
+      if (error.code === '23505') {
+        // Unique constraint violation
+        if (error.constraint === 'students_roll_number_key') {
+          throw new Error("Roll number already exists");
+        }
+      }
+      throw error;
+    }
   }
 
   async updateStudent(id: number, updateStudent: Partial<InsertStudent>): Promise<Student | undefined> {

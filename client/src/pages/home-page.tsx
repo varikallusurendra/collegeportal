@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { GraduationCap, Calendar, Users, Trophy, Briefcase, User, TrendingUp, Building2, AlertCircle, Info, Star, ExternalLink, FileText } from "lucide-react";
 import { AlumniRegistrationModal } from "@/components/alumni-registration-modal";
 import { AttendanceModal } from "@/components/attendance-modal";
@@ -28,6 +30,15 @@ export default function HomePage() {
   const [showAlumniModal, setShowAlumniModal] = useState(false);
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [openSections, setOpenSections] = useState({
+    ongoing: false,
+    upcoming: false,
+    past: false,
+  });
+
+  const toggleSection = (section: 'ongoing' | 'upcoming' | 'past') => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
 
   const { data: news = [] } = useQuery<News[]>({
     queryKey: ["/api/news"],
@@ -90,6 +101,30 @@ export default function HomePage() {
     const endDate = new Date(event.endDate);
     return endDate < now;
   });
+
+  // Group events by company and year
+  const groupEventsByCompanyAndYear = (eventList: Event[]) => {
+    const grouped: { [company: string]: { [year: number]: Event[] } } = {};
+    
+    eventList.forEach(event => {
+      const company = event.company || 'Unknown Company';
+      const year = new Date(event.startDate).getFullYear();
+      
+      if (!grouped[company]) {
+        grouped[company] = {};
+      }
+      if (!grouped[company][year]) {
+        grouped[company][year] = [];
+      }
+      grouped[company][year].push(event);
+    });
+    
+    return grouped;
+  };
+
+  const ongoingGrouped = groupEventsByCompanyAndYear(ongoingEvents);
+  const upcomingGrouped = groupEventsByCompanyAndYear(upcomingEvents);
+  const pastGrouped = groupEventsByCompanyAndYear(pastEvents);
 
   const defaultPlacementStats: PlacementStats = {
     studentsPlaced: 0,
@@ -316,142 +351,211 @@ export default function HomePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="ongoing" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
-                    <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-                    <TabsTrigger value="past">Past</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="ongoing" className="space-y-4">
-                    {eventsLoading ? (
-                      <p className="text-slate-600 text-center py-8">Loading events...</p>
-                    ) : eventsError ? (
-                      <p className="text-red-600 text-center py-8">Error loading events: {eventsError.message}</p>
-                    ) : ongoingEvents.length === 0 ? (
-                      <p className="text-slate-600 text-center py-8">No ongoing events.</p>
-                    ) : (
-                      ongoingEvents.map((event) => (
-                        <div key={event.id} className="bg-green-50 border border-green-200 rounded-lg p-4">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-slate-800">{event.title}</h3>
-                              <p className="text-slate-600 text-sm mt-1">{event.description}</p>
-                              <p className="text-slate-600 text-sm">Company: {event.company}</p>
-                              {(event.notificationLink || event.attachmentUrl) && (
-                                <div className="flex gap-2 mt-2">
-                                  {event.notificationLink && (
-                                    <a 
-                                      href={event.notificationLink} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="inline-flex items-center text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200"
-                                    >
-                                      <ExternalLink className="w-3 h-3 mr-1" />
-                                      Link
-                                    </a>
-                                  )}
-                                  {event.attachmentUrl && (
-                                    <a 
-                                      href={event.attachmentUrl} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="inline-flex items-center text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200"
-                                    >
-                                      <FileText className="w-3 h-3 mr-1" />
-                                      Attachment
-                                    </a>
-                                  )}
+                <div className="space-y-4">
+                  {/* Ongoing Events */}
+                  <Collapsible open={openSections.ongoing} onOpenChange={() => toggleSection('ongoing')}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" className="w-full justify-between p-4 h-auto bg-green-50 hover:bg-green-100 border border-green-200">
+                        <div className="flex items-center">
+                          <Badge className="bg-green-500 text-white mr-3">LIVE</Badge>
+                          <span className="font-semibold">Ongoing Events</span>
+                          <span className="ml-2 text-sm text-slate-600">({ongoingEvents.length})</span>
+                        </div>
+                        {openSections.ongoing ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-3 mt-3">
+                      {eventsLoading ? (
+                        <p className="text-slate-600 text-center py-4">Loading events...</p>
+                      ) : eventsError ? (
+                        <p className="text-red-600 text-center py-4">Error loading events: {eventsError.message}</p>
+                      ) : ongoingEvents.length === 0 ? (
+                        <p className="text-slate-600 text-center py-4">No ongoing events.</p>
+                      ) : (
+                        Object.entries(ongoingGrouped).map(([company, years]) => (
+                          <div key={company} className="bg-white border border-green-200 rounded-lg p-4 shadow-sm">
+                            <h3 className="font-semibold text-slate-800 mb-3 text-lg">{company}</h3>
+                            <div className="space-y-3">
+                              {Object.entries(years).map(([year, companyEvents]) => (
+                                <div key={year} className="ml-4 border-l-2 border-green-300 pl-4">
+                                  <h4 className="font-medium text-slate-700 mb-2">Year {year}</h4>
+                                  <div className="space-y-2">
+                                    {companyEvents.map((event) => (
+                                      <div key={event.id} className="bg-green-50 border border-green-200 rounded-lg p-3">
+                                        <div className="flex justify-between items-start">
+                                          <div className="flex-1">
+                                            <h5 className="font-semibold text-slate-800">{event.title}</h5>
+                                            <p className="text-slate-600 text-sm mt-1">{event.description}</p>
+                                            {(event.notificationLink || event.attachmentUrl) && (
+                                              <div className="flex gap-2 mt-2">
+                                                {event.notificationLink && (
+                                                  <a 
+                                                    href={event.notificationLink} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200"
+                                                  >
+                                                    <ExternalLink className="w-3 h-3 mr-1" />
+                                                    Link
+                                                  </a>
+                                                )}
+                                                {event.attachmentUrl && (
+                                                  <a 
+                                                    href={event.attachmentUrl} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200"
+                                                  >
+                                                    <FileText className="w-3 h-3 mr-1" />
+                                                    Attachment
+                                                  </a>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                          <Button 
+                                            className="bg-green-500 text-white hover:bg-green-600 ml-3"
+                                            onClick={() => handleMarkAttendance(event)}
+                                          >
+                                            Mark Attendance
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
-                              )}
-                              <Badge className="mt-2 bg-green-500 text-white">LIVE</Badge>
+                              ))}
                             </div>
-                            <Button 
-                              className="bg-green-500 text-white hover:bg-green-600"
-                              onClick={() => handleMarkAttendance(event)}
-                            >
-                              Mark Attendance
-                            </Button>
                           </div>
+                        ))
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  {/* Upcoming Events */}
+                  <Collapsible open={openSections.upcoming} onOpenChange={() => toggleSection('upcoming')}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" className="w-full justify-between p-4 h-auto bg-blue-50 hover:bg-blue-100 border border-blue-200">
+                        <div className="flex items-center">
+                          <Badge className="bg-blue-500 text-white mr-3">UPCOMING</Badge>
+                          <span className="font-semibold">Upcoming Events</span>
+                          <span className="ml-2 text-sm text-slate-600">({upcomingEvents.length})</span>
                         </div>
-                      ))
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="upcoming" className="space-y-4">
-                    {eventsLoading ? (
-                      <p className="text-slate-600 text-center py-8">Loading events...</p>
-                    ) : eventsError ? (
-                      <p className="text-red-600 text-center py-8">Error loading events: {eventsError.message}</p>
-                    ) : upcomingEvents.length === 0 ? (
-                      <p className="text-slate-600 text-center py-8">No upcoming events.</p>
-                    ) : (
-                      upcomingEvents.map((event) => (
-                        <div key={event.id} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                          <h3 className="font-semibold text-slate-800">{event.title}</h3>
-                          <p className="text-slate-600 text-sm mt-1">{event.description}</p>
-                          <p className="text-slate-600 text-sm">Company: {event.company}</p>
-                          {(event.notificationLink || event.attachmentUrl) && (
-                            <div className="flex gap-2 mt-2">
-                              {event.notificationLink && (
-                                <a 
-                                  href={event.notificationLink} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200"
-                                >
-                                  <ExternalLink className="w-3 h-3 mr-1" />
-                                  Link
-                                </a>
-                              )}
-                              {event.attachmentUrl && (
-                                <a 
-                                  href={event.attachmentUrl} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200"
-                                >
-                                  <FileText className="w-3 h-3 mr-1" />
-                                  Attachment
-                                </a>
-                              )}
+                        {openSections.upcoming ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-3 mt-3">
+                      {eventsLoading ? (
+                        <p className="text-slate-600 text-center py-4">Loading events...</p>
+                      ) : eventsError ? (
+                        <p className="text-red-600 text-center py-4">Error loading events: {eventsError.message}</p>
+                      ) : upcomingEvents.length === 0 ? (
+                        <p className="text-slate-600 text-center py-4">No upcoming events.</p>
+                      ) : (
+                        Object.entries(upcomingGrouped).map(([company, years]) => (
+                          <div key={company} className="bg-white border border-blue-200 rounded-lg p-4 shadow-sm">
+                            <h3 className="font-semibold text-slate-800 mb-3 text-lg">{company}</h3>
+                            <div className="space-y-3">
+                              {Object.entries(years).map(([year, companyEvents]) => (
+                                <div key={year} className="ml-4 border-l-2 border-blue-300 pl-4">
+                                  <h4 className="font-medium text-slate-700 mb-2">Year {year}</h4>
+                                  <div className="space-y-2">
+                                    {companyEvents.map((event) => (
+                                      <div key={event.id} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                        <h5 className="font-semibold text-slate-800">{event.title}</h5>
+                                        <p className="text-slate-600 text-sm mt-1">{event.description}</p>
+                                        {(event.notificationLink || event.attachmentUrl) && (
+                                          <div className="flex gap-2 mt-2">
+                                            {event.notificationLink && (
+                                              <a 
+                                                href={event.notificationLink} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200"
+                                              >
+                                                <ExternalLink className="w-3 h-3 mr-1" />
+                                                Link
+                                              </a>
+                                            )}
+                                            {event.attachmentUrl && (
+                                              <a 
+                                                href={event.attachmentUrl} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200"
+                                              >
+                                                <FileText className="w-3 h-3 mr-1" />
+                                                Attachment
+                                              </a>
+                                            )}
+                                          </div>
+                                        )}
+                                        <div className="flex justify-between items-center mt-3">
+                                          <span className="text-sm text-slate-500">
+                                            {new Date(event.startDate).toLocaleDateString()} • {new Date(event.startDate).toLocaleTimeString()}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          )}
-                          <div className="flex justify-between items-center mt-3">
-                            <span className="text-sm text-slate-500">
-                              {new Date(event.startDate).toLocaleDateString()} • {new Date(event.startDate).toLocaleTimeString()}
-                            </span>
-                            <Badge className="bg-blue-500 text-white">UPCOMING</Badge>
                           </div>
+                        ))
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  {/* Past Events */}
+                  <Collapsible open={openSections.past} onOpenChange={() => toggleSection('past')}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" className="w-full justify-between p-4 h-auto bg-slate-50 hover:bg-slate-100 border border-slate-200">
+                        <div className="flex items-center">
+                          <Badge className="bg-slate-400 text-white mr-3">COMPLETED</Badge>
+                          <span className="font-semibold">Past Events</span>
+                          <span className="ml-2 text-sm text-slate-600">({pastEvents.length})</span>
                         </div>
-                      ))
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="past" className="space-y-4">
-                    {eventsLoading ? (
-                      <p className="text-slate-600 text-center py-8">Loading events...</p>
-                    ) : eventsError ? (
-                      <p className="text-red-600 text-center py-8">Error loading events: {eventsError.message}</p>
-                    ) : pastEvents.length === 0 ? (
-                      <p className="text-slate-600 text-center py-8">No past events.</p>
-                    ) : (
-                      pastEvents.map((event) => (
-                        <div key={event.id} className="bg-slate-50 border border-slate-200 rounded-lg p-4 opacity-75">
-                          <h3 className="font-semibold text-slate-700">{event.title}</h3>
-                          <p className="text-slate-600 text-sm mt-1">{event.description}</p>
-                          <p className="text-slate-600 text-sm">Company: {event.company}</p>
-                          <div className="flex justify-between items-center mt-3">
-                            <span className="text-sm text-slate-500">
-                              {new Date(event.startDate).toLocaleDateString()}
-                            </span>
-                            <Badge className="bg-slate-400 text-white">COMPLETED</Badge>
+                        {openSections.past ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-3 mt-3">
+                      {eventsLoading ? (
+                        <p className="text-slate-600 text-center py-4">Loading events...</p>
+                      ) : eventsError ? (
+                        <p className="text-red-600 text-center py-4">Error loading events: {eventsError.message}</p>
+                      ) : pastEvents.length === 0 ? (
+                        <p className="text-slate-600 text-center py-4">No past events.</p>
+                      ) : (
+                        Object.entries(pastGrouped).map(([company, years]) => (
+                          <div key={company} className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm opacity-75">
+                            <h3 className="font-semibold text-slate-700 mb-3 text-lg">{company}</h3>
+                            <div className="space-y-3">
+                              {Object.entries(years).map(([year, companyEvents]) => (
+                                <div key={year} className="ml-4 border-l-2 border-slate-300 pl-4">
+                                  <h4 className="font-medium text-slate-600 mb-2">Year {year}</h4>
+                                  <div className="space-y-2">
+                                    {companyEvents.map((event) => (
+                                      <div key={event.id} className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                                        <h5 className="font-semibold text-slate-700">{event.title}</h5>
+                                        <p className="text-slate-600 text-sm mt-1">{event.description}</p>
+                                        <div className="flex justify-between items-center mt-3">
+                                          <span className="text-sm text-slate-500">
+                                            {new Date(event.startDate).toLocaleDateString()}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))
-                    )}
-                  </TabsContent>
-                </Tabs>
+                        ))
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
               </CardContent>
             </Card>
           </div>

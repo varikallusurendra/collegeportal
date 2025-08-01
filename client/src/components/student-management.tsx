@@ -51,7 +51,21 @@ export function StudentManagement() {
 
   const createStudentMutation = useMutation({
     mutationFn: async (data: StudentForm) => {
-      const response = await apiRequest("POST", "/api/students", data);
+      // Send as JSON instead of FormData
+      const response = await fetch("/api/students", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`${response.status}: ${errorText}`);
+      }
+      
       return response.json();
     },
     onSuccess: () => {
@@ -161,10 +175,25 @@ export function StudentManagement() {
   };
 
   const onSubmit = (data: StudentForm) => {
+    // Clean the data before sending
+    const cleanData = {
+      ...data,
+      package: data.package === "" || data.package === null || data.package === undefined ? undefined : data.package,
+    };
+    
+    console.log("Form data being sent:", cleanData);
+    console.log("Form validation errors:", form.formState.errors);
+    
+    // Check if required fields are present
+    if (!cleanData.name || !cleanData.rollNumber) {
+      console.error("Missing required fields:", { name: cleanData.name, rollNumber: cleanData.rollNumber });
+      return;
+    }
+    
     if (editingStudent) {
-      updateStudentMutation.mutate(data);
+      updateStudentMutation.mutate(cleanData);
     } else {
-      createStudentMutation.mutate(data);
+      createStudentMutation.mutate(cleanData);
     }
   };
 
@@ -353,6 +382,11 @@ export function StudentManagement() {
                     </Select>
                   )}
                 />
+                {form.formState.errors.year && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {form.formState.errors.year.message}
+                  </p>
+                )}
               </div>
             </div>
 

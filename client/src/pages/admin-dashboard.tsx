@@ -207,8 +207,8 @@ export default function AdminDashboard() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex flex-col">
-                <h1 className="text-lg font-bold text-slate-800">KITS TPO Dashboard</h1>
-                <span className="text-xs text-slate-600">Akshar Institute of Technology</span>
+                <h1 className="text-lg font-bold text-slate-800">TPO Dashboard</h1>
+                <span className="text-xs text-slate-600">KITS Akshar Institute of Technology</span>
               </div>
             </div>
             <div className="flex items-center space-x-4">
