@@ -160,6 +160,34 @@ export function NotificationManagement() {
     }
   };
 
+  // Default notifications to show when database is empty (same as landing page)
+  const defaultNotifications = [
+    {
+      id: -1,
+      title: "Placement Registration Open",
+      type: "URGENT",
+      link: "/placements/register",
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: -2,
+      title: "Resume Building Workshop",
+      type: "NEW", 
+      link: "/workshops/resume-building",
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: -3,
+      title: "Mock Interview Sessions",
+      type: "INFO",
+      link: "/interviews/mock",
+      createdAt: new Date().toISOString()
+    }
+  ];
+
+  // Use default notifications if database is empty
+  const displayNotifications = notifications.length > 0 ? notifications : defaultNotifications;
+
   if (isLoading) {
     return <div>Loading notifications...</div>;
   }
@@ -174,24 +202,29 @@ export function NotificationManagement() {
         </Button>
       </div>
 
+      {notifications.length === 0 && (
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-blue-800 font-medium">📢 Showing Default Notifications</p>
+          <p className="text-blue-600 text-sm mt-1">
+            These are the default notifications currently shown on the landing page. Create your own notifications to replace them.
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {notifications.length === 0 ? (
-          <Card className="col-span-full">
-            <CardContent className="p-8 text-center">
-              <Bell className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-              <p className="text-slate-600">No notifications created yet.</p>
-              <Button className="mt-4" onClick={handleAddNotification}>
-                Create your first notification
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          notifications.map((notification) => (
-            <Card key={notification.id}>
+        {displayNotifications.map((notification) => (
+            <Card key={notification.id} className={notification.id < 0 ? "border-blue-200 bg-blue-50/30" : ""}>
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <CardTitle className="text-lg">{notification.title}</CardTitle>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      {notification.title}
+                      {notification.id < 0 && (
+                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
+                          Default
+                        </Badge>
+                      )}
+                    </CardTitle>
                     <div className="flex items-center gap-2 mt-2">
                       <Badge className={`${getTypeColor(notification.type)} text-white`}>
                         {notification.type.toUpperCase()}
@@ -224,21 +257,29 @@ export function NotificationManagement() {
                   Created: {new Date(notification.createdAt!).toLocaleString()}
                 </p>
                 <div className="flex space-x-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleEditNotification(notification)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-red-600 border-red-300 hover:bg-red-50"
-                    onClick={() => handleDeleteNotification(notification.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  {notification.id > 0 ? (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEditNotification(notification)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 border-red-300 hover:bg-red-50"
+                        onClick={() => handleDeleteNotification(notification.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="text-xs text-slate-500 italic">
+                      Default notification - create custom notifications to replace
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
