@@ -83,6 +83,18 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
+  async testConnection(): Promise<void> {
+    try {
+      const client = await pool.connect();
+      await client.query('SELECT 1');
+      client.release();
+      console.log("Database connection successful");
+    } catch (error: any) {
+      console.error("Database connection test failed:", error.message);
+      throw error;
+    }
+  }
+
   // User methods
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));

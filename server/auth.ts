@@ -30,6 +30,9 @@ async function comparePasswords(supplied: string, stored: string) {
 
 async function createDefaultUser() {
   try {
+    // Test database connection first
+    await storage.testConnection();
+    
     const existingUser = await storage.getUserByUsername("tpo_admin");
     if (!existingUser) {
       const defaultUser = {
@@ -39,9 +42,18 @@ async function createDefaultUser() {
       };
       await storage.createUser(defaultUser);
       console.log("Default TPO user created: username=tpo_admin, password=admin123");
+    } else {
+      console.log("Default TPO user already exists");
     }
-  } catch (error) {
-    console.error("Error creating default user:", error);
+  } catch (error: any) {
+    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      console.error("Database connection failed. Please check your DATABASE_URL in .env file:");
+      console.error("- Ensure PostgreSQL is running on your local machine");
+      console.error("- Verify the connection string format: postgresql://username:password@host:port/database");
+      console.error("- Make sure the database 'tpo_portal' exists");
+    } else {
+      console.error("Error creating default user:", error.message);
+    }
   }
 }
 
