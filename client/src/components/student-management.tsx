@@ -41,6 +41,7 @@ export function StudentManagement() {
       rollNumber: "",
       branch: "",
       year: 1,
+      batch: "",
       email: "",
       phone: "",
       selected: false,
@@ -143,6 +144,7 @@ export function StudentManagement() {
       rollNumber: "",
       branch: "",
       year: 1,
+      batch: "",
       email: "",
       phone: "",
       selected: false,
@@ -160,6 +162,7 @@ export function StudentManagement() {
       rollNumber: student.rollNumber,
       branch: student.branch || "",
       year: student.year || 1,
+      batch: student.batch || "",
       email: student.email || "",
       phone: student.phone || "",
       selected: student.selected || false,
@@ -180,7 +183,19 @@ export function StudentManagement() {
     setShowStudentModal(false);
     setEditingStudent(null);
     setOfferLetterFile(null);
-    form.reset();
+    form.reset({
+      name: "",
+      rollNumber: "",
+      branch: "",
+      year: 1,
+      batch: "",
+      email: "",
+      phone: "",
+      selected: false,
+      companyName: "",
+      package: undefined,
+      role: "",
+    });
   };
 
   const onSubmit = async (data: StudentForm) => {
@@ -230,15 +245,18 @@ export function StudentManagement() {
     }
   };
 
-  // Group students by branch and year
+  // Group students by branch, batch, and year
   const groupedStudents = students.reduce((acc, student) => {
     const branch = student.branch || 'Unknown';
+    const batch = student.batch || 'Unknown Batch';
     const year = student.year || 0;
+    
     if (!acc[branch]) acc[branch] = {};
-    if (!acc[branch][year]) acc[branch][year] = [];
-    acc[branch][year].push(student);
+    if (!acc[branch][batch]) acc[branch][batch] = {};
+    if (!acc[branch][batch][year]) acc[branch][batch][year] = [];
+    acc[branch][batch][year].push(student);
     return acc;
-  }, {} as Record<string, Record<number, Student[]>>);
+  }, {} as Record<string, Record<string, Record<number, Student[]>>>);
 
   if (isLoading) {
     return <div>Loading students...</div>;
@@ -269,7 +287,7 @@ export function StudentManagement() {
         </Card>
       ) : (
         <div className="space-y-6">
-          {Object.entries(groupedStudents).map(([branch, yearGroups]) => (
+          {Object.entries(groupedStudents).map(([branch, batchGroups]) => (
             <Card key={branch}>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -278,68 +296,75 @@ export function StudentManagement() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {Object.entries(yearGroups).map(([year, students]) => (
-                  <div key={year} className="mb-6">
-                    <h4 className="text-lg font-medium text-slate-700 mb-3">Year {year}</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {students.map((student) => (
-                        <Card key={student.id} className="border">
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-start mb-2">
-                              <div className="flex-1">
-                                <h5 className="font-medium text-slate-800">{student.name}</h5>
-                                <p className="text-sm text-slate-600">{student.rollNumber}</p>
-                                {student.email && (
-                                  <p className="text-xs text-slate-500">{student.email}</p>
+                {Object.entries(batchGroups).map(([batch, yearGroups]) => (
+                  <div key={batch} className="mb-6">
+                    <h4 className="text-lg font-medium text-slate-700 mb-3 border-b pb-2">
+                      Batch: {batch}
+                    </h4>
+                    {Object.entries(yearGroups).map(([year, students]) => (
+                      <div key={year} className="mb-4 ml-4">
+                        <h5 className="text-md font-medium text-slate-600 mb-2">Year {year}</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {students.map((student) => (
+                            <Card key={student.id} className="border">
+                              <CardContent className="p-4">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div className="flex-1">
+                                    <h5 className="font-medium text-slate-800">{student.name}</h5>
+                                    <p className="text-sm text-slate-600">{student.rollNumber}</p>
+                                    {student.email && (
+                                      <p className="text-xs text-slate-500">{student.email}</p>
+                                    )}
+                                  </div>
+                                  {student.selected && (
+                                    <Badge className="bg-green-500 text-white">
+                                      <UserCheck className="w-3 h-3 mr-1" />
+                                      Placed
+                                    </Badge>
+                                  )}
+                                </div>
+                                {student.selected && student.companyName && (
+                                  <div className="mb-2 p-2 bg-green-50 rounded text-xs">
+                                    <p className="font-medium text-green-800">{student.companyName}</p>
+                                    {student.role && <p className="text-green-600">{student.role}</p>}
+                                    {student.package && <p className="text-green-600">₹{student.package} LPA</p>}
+                                    {student.offerLetterUrl && (
+                                      <p className="text-green-600 mt-1">
+                                        <a 
+                                          href={student.offerLetterUrl} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="underline hover:text-green-800"
+                                        >
+                                          View Offer Letter
+                                        </a>
+                                      </p>
+                                    )}
+                                  </div>
                                 )}
-                              </div>
-                              {student.selected && (
-                                <Badge className="bg-green-500 text-white">
-                                  <UserCheck className="w-3 h-3 mr-1" />
-                                  Placed
-                                </Badge>
-                              )}
-                            </div>
-                            {student.selected && student.companyName && (
-                              <div className="mb-2 p-2 bg-green-50 rounded text-xs">
-                                <p className="font-medium text-green-800">{student.companyName}</p>
-                                {student.role && <p className="text-green-600">{student.role}</p>}
-                                {student.package && <p className="text-green-600">₹{student.package} LPA</p>}
-                                {student.offerLetterUrl && (
-                                  <p className="text-green-600 mt-1">
-                                    <a 
-                                      href={student.offerLetterUrl} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="underline hover:text-green-800"
-                                    >
-                                      View Offer Letter
-                                    </a>
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                            <div className="flex space-x-2 mt-3">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleEditStudent(student)}
-                              >
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-red-600 border-red-300 hover:bg-red-50"
-                                onClick={() => handleDeleteStudent(student.id)}
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+                                <div className="flex space-x-2 mt-3">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleEditStudent(student)}
+                                  >
+                                    <Edit className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600 border-red-300 hover:bg-red-50"
+                                    onClick={() => handleDeleteStudent(student.id)}
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ))}
               </CardContent>
@@ -436,6 +461,16 @@ export function StudentManagement() {
                   </p>
                 )}
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="batch">Batch (Study Period)</Label>
+              <Input
+                id="batch"
+                placeholder="e.g., 2020-2024, 2021-2025"
+                {...form.register("batch")}
+              />
+              <p className="text-xs text-slate-500 mt-1">Enter the study period (e.g., 2020-2024 for 4-year course)</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

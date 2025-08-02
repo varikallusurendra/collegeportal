@@ -11,6 +11,12 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const sessions = pgTable("session", {
+  sid: text("sid").primaryKey(),
+  sess: json("sess").notNull(),
+  expire: timestamp("expire").notNull(),
+});
+
 export const news = pgTable("news", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
@@ -39,6 +45,7 @@ export const students = pgTable("students", {
   rollNumber: text("roll_number").notNull().unique(),
   branch: text("branch"),
   year: integer("year"), // Added year field
+  batch: text("batch"), // Study period/batch (e.g., "2020-2024", "2021-2025")
   email: text("email"),
   phone: text("phone"),
   photoUrl: text("photo_url"),
@@ -151,6 +158,7 @@ export const insertImportantNotificationSchema = createInsertSchema(importantNot
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type Session = typeof sessions.$inferSelect;
 export type News = typeof news.$inferSelect;
 export type InsertNews = z.infer<typeof insertNewsSchema>;
 export type Event = typeof events.$inferSelect;

@@ -9,7 +9,7 @@ import {
   heroNotifications, importantNotifications, type HeroNotification, type InsertHeroNotification, type ImportantNotification, type InsertImportantNotification
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, asc } from "drizzle-orm";
 import session from "express-session";
 import type { Store as SessionStoreType } from "express-session";
 import connectPg from "connect-pg-simple";
@@ -38,6 +38,7 @@ export interface IStorage {
 
   // Student methods
   getAllStudents(): Promise<Student[]>;
+  getStudentsByDepartmentAndYear(branch?: string, year?: number, batch?: string): Promise<Student[]>;
   getStudentById(id: number): Promise<Student | undefined>;
   getStudentByRollNumber(rollNumber: string): Promise<Student | undefined>;
   createStudent(student: InsertStudent): Promise<Student>;
@@ -181,6 +182,30 @@ export class DatabaseStorage implements IStorage {
   // Student methods
   async getAllStudents(): Promise<Student[]> {
     return await db.select().from(students).orderBy(desc(students.createdAt));
+  }
+
+  async getStudentsByDepartmentAndYear(branch?: string, year?: number, batch?: string): Promise<Student[]> {
+    let conditions = [];
+    
+    // Apply filters if provided
+    if (branch) {
+      conditions.push(eq(students.branch, branch));
+    }
+    if (year) {
+      conditions.push(eq(students.year, year));
+    }
+    if (batch) {
+      conditions.push(eq(students.batch, batch));
+    }
+    
+    let query = db.select().from(students);
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    // Order by branch, year, batch, and rollNumber for proper organization
+    return await query.orderBy(asc(students.branch), asc(students.year), asc(students.batch), asc(students.rollNumber));
   }
 
   async getStudentById(id: number): Promise<Student | undefined> {

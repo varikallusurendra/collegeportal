@@ -17,6 +17,34 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Helper function to parse CSV lines with proper handling of quoted values
+const parseCSVLine = (line: string) => {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  
+  // Remove quotes from the beginning and end of each field
+  return result.map(field => {
+    if (field.startsWith('"') && field.endsWith('"')) {
+      return field.slice(1, -1);
+    }
+    return field;
+  });
+};
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
@@ -685,16 +713,37 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     try {
-      const students = await storage.getAllStudents();
+      const { branch, year, batch } = req.query;
+      
+      let students;
+      if (branch || year || batch) {
+        // Use filtered query with department, year, and batch organization
+        students = await storage.getStudentsByDepartmentAndYear(
+          branch as string, 
+          year ? parseInt(year as string) : undefined,
+          batch as string
+        );
+      } else {
+        // Use default query but still organize by department, year, and batch
+        students = await storage.getStudentsByDepartmentAndYear();
+      }
+      
       // Exclude createdAt and updatedAt fields
       const exportStudents = students.map(({ createdAt, updatedAt, ...rest }) => rest);
       const worksheet = XLSX.utils.json_to_sheet(exportStudents);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
 
+      // Generate filename based on filters
+      let filename = "students";
+      if (branch) filename += `_${branch}`;
+      if (year) filename += `_${year}`;
+      if (batch) filename += `_${batch}`;
+      filename += ".xlsx";
+
       const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
-      res.setHeader('Content-Disposition', 'attachment; filename="students.xlsx"');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.send(buffer);
     } catch (error) {
@@ -751,7 +800,17 @@ export function registerRoutes(app: Express): Server {
 
       const csvContent = req.file.buffer.toString();
       const lines = csvContent.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.trim());
+      
+      if (lines.length < 2) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "CSV file must have at least a header row and one data row", 
+          imported: 0, 
+          errors: [] 
+        });
+      }
+      
+      const headers = parseCSVLine(lines[0]);
       const data = lines.slice(1);
 
       let imported = 0;
@@ -761,24 +820,35 @@ export function registerRoutes(app: Express): Server {
         const row = data[i];
         if (!row.trim()) continue;
 
-        const values = row.split(',').map(v => v.trim());
+        const values = parseCSVLine(row);
         const studentData: any = {};
 
         headers.forEach((header, index) => {
           const value = values[index] || '';
+          // Skip empty values for optional fields
+          if (value === '' || value === undefined || value === null) {
+            return;
+          }
+          
           switch (header) {
             case 'name':
-            case 'roll_number':
+            case 'rollNumber':
             case 'branch':
             case 'email':
             case 'phone':
-            case 'company_name':
+            case 'companyName':
             case 'role':
+            case 'photoUrl':
+            case 'offerLetterUrl':
+            case 'batch':
               studentData[header] = value;
               break;
             case 'year':
             case 'package':
-              studentData[header] = value ? parseInt(value) : null;
+              const numValue = parseInt(value);
+              if (!isNaN(numValue)) {
+                studentData[header] = numValue;
+              }
               break;
             case 'selected':
               studentData[header] = value.toLowerCase() === 'true';
@@ -787,6 +857,12 @@ export function registerRoutes(app: Express): Server {
         });
 
         try {
+          // Validate required fields
+          if (!studentData.name || !studentData.rollNumber) {
+            errors.push(`Row ${i + 2}: Name and rollNumber are required fields`);
+            continue;
+          }
+          
           const validatedData = insertStudentSchema.parse(studentData);
           await storage.createStudent(validatedData);
           imported++;
@@ -818,7 +894,7 @@ export function registerRoutes(app: Express): Server {
 
       const csvContent = req.file.buffer.toString();
       const lines = csvContent.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.trim());
+      const headers = parseCSVLine(lines[0]);
       const data = lines.slice(1);
 
       let imported = 0;
@@ -828,27 +904,40 @@ export function registerRoutes(app: Express): Server {
         const row = data[i];
         if (!row.trim()) continue;
 
-        const values = row.split(',').map(v => v.trim());
+        const values = parseCSVLine(row);
         const eventData: any = {};
 
         headers.forEach((header, index) => {
           const value = values[index] || '';
+          // Skip empty values for optional fields
+          if (value === '' || value === undefined || value === null) {
+            return;
+          }
+          
           switch (header) {
             case 'title':
             case 'description':
             case 'company':
+            case 'notificationLink':
+            case 'attachmentUrl':
               eventData[header] = value;
               break;
-            case 'start_date':
+            case 'startDate':
               eventData.startDate = value;
               break;
-            case 'end_date':
+            case 'endDate':
               eventData.endDate = value;
               break;
           }
         });
 
         try {
+          // Validate required fields
+          if (!eventData.title || !eventData.description || !eventData.company || !eventData.startDate || !eventData.endDate) {
+            errors.push(`Row ${i + 2}: title, description, company, startDate, and endDate are required fields`);
+            continue;
+          }
+          
           const validatedData = insertEventSchema.parse(eventData);
           await storage.createEvent(validatedData);
           imported++;
@@ -880,7 +969,7 @@ export function registerRoutes(app: Express): Server {
 
       const csvContent = req.file.buffer.toString();
       const lines = csvContent.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.trim());
+      const headers = parseCSVLine(lines[0]);
       const data = lines.slice(1);
 
       let imported = 0;
@@ -890,28 +979,42 @@ export function registerRoutes(app: Express): Server {
         const row = data[i];
         if (!row.trim()) continue;
 
-        const values = row.split(',').map(v => v.trim());
+        const values = parseCSVLine(row);
         const alumniData: any = {};
 
         headers.forEach((header, index) => {
           const value = values[index] || '';
+          // Skip empty values for optional fields
+          if (value === '' || value === undefined || value === null) {
+            return;
+          }
+          
           switch (header) {
             case 'name':
-            case 'roll_number':
-            case 'higher_education_college':
-            case 'college_roll_number':
+            case 'rollNumber':
+            case 'higherEducationCollege':
+            case 'collegeRollNumber':
             case 'address':
-            case 'contact_number':
+            case 'contactNumber':
             case 'email':
               alumniData[header] = value;
               break;
-            case 'pass_out_year':
-              alumniData[header] = value ? parseInt(value) : null;
+            case 'passOutYear':
+              const numValue = parseInt(value);
+              if (!isNaN(numValue)) {
+                alumniData[header] = numValue;
+              }
               break;
           }
         });
 
         try {
+          // Validate required fields
+          if (!alumniData.name || !alumniData.rollNumber || !alumniData.passOutYear || !alumniData.address || !alumniData.contactNumber || !alumniData.email) {
+            errors.push(`Row ${i + 2}: name, rollNumber, passOutYear, address, contactNumber, and email are required fields`);
+            continue;
+          }
+          
           const validatedData = insertAlumniSchema.parse(alumniData);
           await storage.createAlumni(validatedData);
           imported++;
@@ -943,7 +1046,7 @@ export function registerRoutes(app: Express): Server {
 
       const csvContent = req.file.buffer.toString();
       const lines = csvContent.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.trim());
+      const headers = parseCSVLine(lines[0]);
       const data = lines.slice(1);
 
       let imported = 0;
@@ -953,23 +1056,39 @@ export function registerRoutes(app: Express): Server {
         const row = data[i];
         if (!row.trim()) continue;
 
-        const values = row.split(',').map(v => v.trim());
+        const values = parseCSVLine(row);
         const attendanceData: any = {};
 
         headers.forEach((header, index) => {
           const value = values[index] || '';
+          // Skip empty values for optional fields
+          if (value === '' || value === undefined || value === null) {
+            return;
+          }
+          
           switch (header) {
-            case 'student_name':
-            case 'roll_number':
+            case 'studentName':
+            case 'rollNumber':
+            case 'branch':
               attendanceData[header] = value;
               break;
-            case 'event_id':
-              attendanceData[header] = value ? parseInt(value) : null;
+            case 'eventId':
+            case 'year':
+              const numValue = parseInt(value);
+              if (!isNaN(numValue)) {
+                attendanceData[header] = numValue;
+              }
               break;
           }
         });
 
         try {
+          // Validate required fields
+          if (!attendanceData.studentName || !attendanceData.rollNumber) {
+            errors.push(`Row ${i + 2}: studentName and rollNumber are required fields`);
+            continue;
+          }
+          
           const validatedData = insertAttendanceSchema.parse(attendanceData);
           await storage.markAttendance(validatedData);
           imported++;

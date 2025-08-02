@@ -87,18 +87,18 @@ export function ImportFunctions() {
 
   const getCSVTemplate = () => {
     const templates = {
-      students: `name,roll_number,branch,year,email,phone,selected,company_name,package,role
-John Doe,2024001,CSE,2024,john@example.com,1234567890,true,TCS,12,Software Engineer
-Jane Smith,2024002,ECE,2024,jane@example.com,1234567891,false,,,`,
-      events: `title,description,company,start_date,end_date
-Campus Drive,Technical interview and coding round,TCS,2024-03-15T09:00:00Z,2024-03-15T17:00:00Z
-Placement Drive,Final placement round,Infosys,2024-03-20T10:00:00Z,2024-03-20T16:00:00Z`,
-      alumni: `name,roll_number,pass_out_year,higher_education_college,college_roll_number,address,contact_number,email
+      students: `name,rollNumber,branch,year,batch,email,phone,selected,companyName,package,role,photoUrl,offerLetterUrl
+John Doe,2024001,CSE,2024,2020-2024,john@example.com,1234567890,true,TCS,12,Software Engineer,,
+Jane Smith,2024002,ECE,2024,2020-2024,jane@example.com,1234567891,false,,,,,,`,
+      events: `title,description,company,startDate,endDate,notificationLink,attachmentUrl
+Campus Drive,Technical interview and coding round,TCS,2024-03-15T09:00:00Z,2024-03-15T17:00:00Z,,
+Placement Drive,Final placement round,Infosys,2024-03-20T10:00:00Z,2024-03-20T16:00:00Z,https://example.com/notification,`,
+      alumni: `name,rollNumber,passOutYear,higherEducationCollege,collegeRollNumber,address,contactNumber,email
 John Doe,2020001,2020,Stanford University,STAN001,123 Main St,1234567890,john@stanford.edu
 Jane Smith,2020002,2020,MIT,MIT001,456 Oak Ave,1234567891,jane@mit.edu`,
-      attendance: `event_id,student_name,roll_number
-1,John Doe,2024001
-1,Jane Smith,2024002`
+      attendance: `eventId,studentName,rollNumber,branch,year
+1,John Doe,2024001,CSE,2024
+1,Jane Smith,2024002,ECE,2024`
     };
 
     const template = templates[importType];
@@ -221,31 +221,37 @@ Jane Smith,2020002,2020,MIT,MIT001,456 Oak Ave,1234567891,jane@mit.edu`,
             <div>
               <h4 className="font-medium mb-2">Students CSV Format:</h4>
               <p className="text-slate-600">
-                name, roll_number, branch, year, email, phone, selected, company_name, package, role
+                name, rollNumber, branch, year, batch, email, phone, selected, companyName, package, role, photoUrl, offerLetterUrl
               </p>
               <p className="text-xs text-slate-500 mt-1">
-                • selected: true/false • package: LPA (number) • role: only for placed students
+                • Required: name, rollNumber • batch: study period (e.g., "2020-2024") • selected: true/false • package: LPA (number) • role: only for placed students
               </p>
             </div>
             <div>
               <h4 className="font-medium mb-2">Events CSV Format:</h4>
               <p className="text-slate-600">
-                title, description, company, start_date, end_date
+                title, description, company, startDate, endDate, notificationLink, attachmentUrl
               </p>
               <p className="text-xs text-slate-500 mt-1">
-                • dates: ISO format (YYYY-MM-DDTHH:MM:SSZ)
+                • Required: title, description, company, startDate, endDate • dates: ISO format (YYYY-MM-DDTHH:MM:SSZ)
               </p>
             </div>
             <div>
               <h4 className="font-medium mb-2">Alumni CSV Format:</h4>
               <p className="text-slate-600">
-                name, roll_number, pass_out_year, higher_education_college, college_roll_number, address, contact_number, email
+                name, rollNumber, passOutYear, higherEducationCollege, collegeRollNumber, address, contactNumber, email
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                • Required: name, rollNumber, passOutYear, address, contactNumber, email
               </p>
             </div>
             <div>
               <h4 className="font-medium mb-2">Attendance CSV Format:</h4>
               <p className="text-slate-600">
-                event_id, student_name, roll_number
+                eventId, studentName, rollNumber, branch, year
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                • Required: studentName, rollNumber • eventId: reference to existing event
               </p>
             </div>
           </div>
